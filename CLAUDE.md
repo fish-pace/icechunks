@@ -8,10 +8,12 @@ A collection of Jupyter notebooks that demonstrate the pattern: **source NetCDF 
 
 ## Status & roadmap (last updated 2026-08-26)
 
-**Done:** The CoastWatch OHC archive is fully built and verified as three separate Icechunk repos on Source Cooperative (`fish-pace/coastwatch/ocean-heat/{na,np,sp}`), each with three groups (`daily`, `14day_v1`, `14day`). Docs and notebooks are mirrored at the `coastwatch/ocean-heat/` root (see below) and everything is committed to `main` (via PRs #3–#6). The GitHub repo is `https://github.com/fish-pace/icechunks`.
+**Done:** The CoastWatch OHC archive was first built and verified as three separate Icechunk repos on Source Cooperative under `fish-pace/coastwatch/ocean-heat/{na,np,sp}`, each with three groups (`daily`, `14day_v1`, `14day`). Docs and notebooks are mirrored at the destination root (see below) and everything is committed to `main` (via PRs #3–#6). The GitHub repo is `https://github.com/fish-pace/icechunks`.
+
+**In progress:** Re-pointing the destination to bucket `ocean-icechunks`, prefix `noaa-ohc` (repos at `ocean-icechunks/noaa-ohc/{na,np,sp}`). All source references (notebooks, README, CLAUDE.md, `icechunk_utils.py`) are updated; still to do: re-point write credentials for the new org and re-run `ocean-heat-production-sc.ipynb` to actually build the repos at the new location.
 
 **Next tasks (not yet started, design open):**
-1. **Rebuild in a different Source Cooperative org.** The target org is TBD. Expect to re-run `ocean-heat-production-sc.ipynb` against the new destination: change `SC_BUCKET`/`SC_PREFIX_BASE`, re-point write credentials, and update every hard-coded `fish-pace/coastwatch/ocean-heat/...` URL (README, CLAUDE.md, the notebooks' `open_region`, and the public-repos table). The build logic itself is org-agnostic.
+1. **Finish the org rebuild.** Source references are already swept to `ocean-icechunks/noaa-ohc`. Remaining: re-point write credentials and re-run `ocean-heat-production-sc.ipynb` against the new destination. The build logic itself is org-agnostic — `open_region`/`region_prefix`/`write_region` all derive from `SC_BUCKET`/`SC_PREFIX_BASE`.
 2. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.** `write_group` is already idempotent/append-friendly (skips groups that exist), but it does not yet append *new time steps* to an existing group — that appending path, plus scheduling/triggering when new source files appear, still needs to be figured out.
 
 ## Running notebooks
@@ -51,7 +53,7 @@ The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.i
 | `virtualizarr_coastwatch_ohc_http_icechunk_demo.ipynb` | NOAA CoastWatch HTTPS NetCDF (OHC) | Local filesystem |
 | `ocean-heat-test-local.ipynb` | NOAA CoastWatch HTTPS NetCDF (OHC) | Local filesystem — minimal proof-of-concept example |
 | `ocean-heat-test-sc.ipynb` | NOAA CoastWatch HTTPS NetCDF (OHC) | Source Coop — minimal proof-of-concept example |
-| `ocean-heat-production-sc.ipynb` | NOAA CoastWatch HTTPS NetCDF/HDF5 (OHC full archive, na/np/sp) | Source Coop (`fish-pace/coastwatch/ocean-heat/{na,np,sp}`) |
+| `ocean-heat-production-sc.ipynb` | NOAA CoastWatch HTTPS NetCDF/HDF5 (OHC full archive, na/np/sp) | Source Coop (`ocean-icechunks/noaa-ohc/{na,np,sp}`) |
 | `cefi_nep_daily-regrid.ipynb` | NOAA CEFI MOM6 S3 NetCDF | Source Coop (`eeholmes/cefi/nepacific-icechunk`) |
 | `copernicus-icechunk-sc.ipynb` | Copernicus GlobColour HTTPS | Source Coop (`fish-pace/globcolour/...`) |
 
@@ -59,7 +61,7 @@ The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.i
 
 - **`url_prefix` must end with `/`** in `VirtualChunkContainer` — missing the slash silently fails to match virtual chunks.
 - **`authorize_virtual_chunk_access`** must be passed at `Repository.open/create` time for virtual chunks outside the Icechunk repo to be readable.
-- **Anonymous read URL must include the bucket.** `icechunk.http_storage(url)` needs the full path `https://data.source.coop/{BUCKET}/{prefix}` (e.g. `fish-pace/coastwatch/ocean-heat/na`), not just the prefix. A wrong/short URL raises `RepositoryNotFoundError: the repository doesn't exist` **deterministically** — it is not a flaky gateway. When an open 404s, verify the full `{bucket}/{prefix}` URL by hand before adding retries. (The S3 write path via `open_source_icechunk_repo` takes `bucket=` separately, so `region_prefix()` intentionally omits it.)
+- **Anonymous read URL must include the bucket.** `icechunk.http_storage(url)` needs the full path `https://data.source.coop/{BUCKET}/{prefix}` (e.g. `ocean-icechunks/noaa-ohc/na`), not just the prefix. A wrong/short URL raises `RepositoryNotFoundError: the repository doesn't exist` **deterministically** — it is not a flaky gateway. When an open 404s, verify the full `{bucket}/{prefix}` URL by hand before adding retries. (The S3 write path via `open_source_icechunk_repo` takes `bucket=` separately, so `region_prefix()` intentionally omits it.)
 - **`save_config()` is required for anonymous readers.** `Repository.open(storage, config=...)` uses the config only for the current session. To persist the `VirtualChunkContainer` so anonymous reopeners pick it up, call `repo.save_config()` after open/create.
 - **Scalar vs. slice indexing on virtual arrays**: prefer `isel(time=slice(0,1), z_l=slice(0,1)).squeeze(drop=True)` over `isel(time=0, z_l=0)` to avoid loading unexpectedly large chunks.
 - **Writable sessions are single-use**: after `session.commit()`, call `repo.writable_session("main")` again before writing more data.
@@ -87,10 +89,10 @@ config.manifest.max_concurrent_manifest_fetches_during_commit = 16
 |---|---|
 | CEFI NEP daily regrid | `https://data.source.coop/eeholmes/cefi/nepacific-icechunk` (groups: `daily/regrid/main`, `daily/regrid/aux`) |
 | GlobColour/Copernicus CHL | `https://data.source.coop/fish-pace/globcolour/cmems_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D` |
-| CoastWatch OHC — North Atlantic (2020–present) | `https://data.source.coop/fish-pace/coastwatch/ocean-heat/na` |
-| CoastWatch OHC — North Pacific (2020–present) | `https://data.source.coop/fish-pace/coastwatch/ocean-heat/np` |
-| CoastWatch OHC — South Pacific (2020–present) | `https://data.source.coop/fish-pace/coastwatch/ocean-heat/sp` |
+| CoastWatch OHC — North Atlantic (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/na` |
+| CoastWatch OHC — North Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` |
+| CoastWatch OHC — South Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` |
 
 Each CoastWatch OHC region is a **separate repo** (different lat/lon grids). Every region repo has three groups: `daily` (original `{region}` product, NetCDF-3), `14day_v1` (`{region}14` NetCDF-3 big-endian), `14day` (`{region}14` HDF5 little-endian). The `14day_v1`/`14day` split is at 2025 day 084/085; the `daily`/`14day` split is a variable-set/product-generation difference.
 
-The `coastwatch/ocean-heat/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `icechunk_utils.py`, and the three notebooks (`ocean-heat-test-local.ipynb`, `ocean-heat-test-sc.ipynb`, `ocean-heat-production-sc.ipynb`). These are reference/reproducibility copies; keep them in sync when the git versions change.
+The `noaa-ohc/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `icechunk_utils.py`, and the three notebooks (`ocean-heat-test-local.ipynb`, `ocean-heat-test-sc.ipynb`, `ocean-heat-production-sc.ipynb`). These are reference/reproducibility copies; keep them in sync when the git versions change.
