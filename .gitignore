@@ -1,0 +1,18 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Jupyter scratch notebooks
+Untitled*.ipynb
+Untitled*
+
+# Credentials — NEVER commit Source Cooperative / STS tokens
+*-creds.json
+*creds*.json
+
+# OS / editor cruft
+.DS_Store
+*.swp
+*.tmp
