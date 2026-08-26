@@ -18,6 +18,23 @@ reads are streamed directly from `coastwatch.noaa.gov` over HTTP range requests
 ("virtual chunks"). See [How to open it](#how-to-open-it) for the one extra step this
 requires.
 
+## How these were built
+
+The notebooks that built these stores live in the GitHub repository
+**<https://github.com/fish-pace/icechunks>** (directory `coastwatch-heat-content/`), and a
+copy of each sits alongside this README on Source Cooperative:
+
+| Notebook | What it shows |
+|---|---|
+| `ocean-heat-test-local.ipynb` | Minimal proof of concept: CoastWatch NetCDF → VirtualiZarr → a **local** Icechunk store. |
+| `ocean-heat-test-sc.ipynb`    | Minimal proof of concept writing to Icechunk on **Source Cooperative**. |
+| `ocean-heat-production-sc.ipynb` | The full parametrized pipeline that built all three region repos (`na`/`np`/`sp`). |
+
+They are provided to document how the archive was assembled and as a starting point for
+anyone building something similar. The write notebooks import shared helpers from
+`icechunk_utils.py` (included here); running them additionally requires Source Cooperative
+write credentials, so for most readers they are read-along references.
+
 ## About the data
 
 The Satellite Ocean Heat Content Suite (produced by USDOC/NOAA/NESDIS/OSPO with the
