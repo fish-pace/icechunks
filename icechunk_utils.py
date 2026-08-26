@@ -68,7 +68,7 @@ def open_source_icechunk_repo(
     Parameters
     ----------
     bucket
-        Source Cooperative bucket name (e.g. "fish-pace").
+        Source Cooperative bucket name (e.g. "ocean-icechunks").
     prefix
         Key prefix inside the bucket for the Icechunk repository.
     config

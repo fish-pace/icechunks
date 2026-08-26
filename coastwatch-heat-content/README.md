@@ -5,9 +5,9 @@
 
 | Region | Icechunk repository |
 |---|---|
-| **North Atlantic** (`na`) | `https://data.source.coop/fish-pace/coastwatch/ocean-heat/na` |
-| **North Pacific** (`np`)  | `https://data.source.coop/fish-pace/coastwatch/ocean-heat/np` |
-| **South Pacific** (`sp`)  | `https://data.source.coop/fish-pace/coastwatch/ocean-heat/sp` |
+| **North Atlantic** (`na`) | `https://data.source.coop/ocean-icechunks/noaa-ohc/na` |
+| **North Pacific** (`np`)  | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` |
+| **South Pacific** (`sp`)  | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` |
 
 Each region is a **separate repository** because the three regions use different lat/lon
 grids and cannot share a virtual Zarr array.
@@ -117,7 +117,7 @@ import xarray as xr
 
 # Pick a region: na (North Atlantic), np (North Pacific), or sp (South Pacific).
 region = "na"
-url = f"https://data.source.coop/fish-pace/coastwatch/ocean-heat/{region}"
+url = f"https://data.source.coop/ocean-icechunks/noaa-ohc/{region}"
 repo = icechunk.Repository.open(icechunk.http_storage(url))
 
 # Authorize reading virtual chunks from coastwatch.noaa.gov (anonymous HTTP).
