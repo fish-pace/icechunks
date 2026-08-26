@@ -8,11 +8,13 @@ A collection of Jupyter notebooks that demonstrate the pattern: **source NetCDF 
 
 ## Running notebooks
 
-Notebooks are self-contained and run in JupyterLab. To install dependencies (when needed, each notebook documents its own):
+Notebooks run in JupyterLab. To install dependencies (when needed, each notebook documents its own):
 
 ```bash
 pip install "icechunk>=2.1" "virtualizarr>=2.4" xarray obspec_utils obstore h5netcdf requests matplotlib
 ```
+
+The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.ipynb`) import shared helpers from `icechunk_utils.py`. It lives at the repo root (the notebooks add `..` to `sys.path`); when a notebook is downloaded standalone from Source Cooperative, `icechunk_utils.py` sits **alongside** it (Jupyter puts the notebook's own directory on `sys.path`, so the co-located copy imports without changes). `ocean-heat-test-local.ipynb` needs no helpers and is fully self-contained.
 
 ## Core pattern (used in all notebooks)
 
