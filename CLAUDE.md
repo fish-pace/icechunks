@@ -117,7 +117,9 @@ All three notebooks read the same source — NOAA CoastWatch OHC over HTTPS.
 credentials, so it is no use to a reader who just found the stores, and
 `ocean-heat-test-local.ipynb` demonstrates the same pattern with none.
 
-It writes to the scratch repository `ocean-icechunks/test-repo`, never to `noaa-ohc`. Its
+It writes to `ocean-icechunks/test-repo/noaa-ohc` — inside the scratch Source Cooperative
+repository <https://source.coop/ocean-icechunks/test-repo> — never to the published
+`ocean-icechunks/noaa-ohc`. Its
 clear cell is guarded twice — a `RUN_CLEAR` flag (a variable, not a `%%script false` magic
 that one stray keystroke removes) and a `PROTECTED` set that refuses any prefix holding a
 published archive. It carries no saved outputs: it is a template of the steps, and stale

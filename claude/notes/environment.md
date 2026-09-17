@@ -18,20 +18,40 @@ nothing** — pip reports no matching distribution, because the only versions it
 see for 3.11 are the 1.1.x line. The install line in CLAUDE.md is correct about
 what is needed and silently wrong about whether it will work here.
 
-Options when this next matters, in the order worth trying:
+**A 3.12 venv works, and this is the recipe** (verified 2026-09-17 by running
+`ocean-heat-test-sc.ipynb` end to end):
 
-1. Check whether the image has been bumped back to 3.12 — this is a managed image
-   and the interpreter is not ours to choose. `python -V` settles it.
-2. Build in a 3.12 env of our own rather than the kernel env. `/usr/bin/python3.12`
-   exists on this machine, so `python3.12 -m venv .venv && .venv/bin/pip install -r
-   requirements.txt` is the concrete route — untested so far, but it means "unrunnable"
-   is a statement about the *kernel* env, not about the machine.
-3. Pin to `icechunk>=1.1,<2` — **not** advisable. The notebooks use 2.x APIs, and
-   the published repos were written by 2.x.
+```bash
+/srv/conda/bin/python3.12 -m venv /path/to/venv      # NOT /usr/bin/python3.12
+/path/to/venv/bin/pip install -r requirements.txt nbconvert ipykernel
+/path/to/venv/bin/python -m ipykernel install --prefix=/path/to/venv --name venv312
+JUPYTER_PATH=/path/to/venv/share/jupyter /path/to/venv/bin/jupyter nbconvert \
+    --to notebook --execute --ExecutePreprocessor.kernel_name=venv312 \
+    --output /somewhere/out.ipynb coastwatch-heat-content/ocean-heat-test-sc.ipynb
+```
 
-Do not "fix" this by relaxing the bound in `requirements.txt` to whatever installs.
+Two traps in that recipe:
 
-## Two dependencies the docs never mention
+- **`/usr/bin/python3.12` cannot make a venv here** — it has no `ensurepip`
+  ("On Debian/Ubuntu systems, you need to install the python3-venv package"). Use
+  `/srv/conda/bin/python3.12`, which is 3.12.12 and does have it.
+- **Run the notebook from `coastwatch-heat-content/`**, not from a copy elsewhere. It
+  does `sys.path.insert(0, '..')` to find `icechunk_utils.py` at the repo root, so a copy
+  executed in a scratch directory fails with `ModuleNotFoundError: icechunk_utils`. That
+  is the notebook working as designed, not a bug.
+
+So "unrunnable" is a statement about the *kernel* env, not about the machine. The other
+options, in order: check whether the image has been bumped back to 3.12 (`python -V`
+settles it), or pin to `icechunk>=1.1,<2` — the last is **not** advisable, since the
+notebooks use 2.x APIs and the published repos were written by 2.x. Do not "fix" this by
+relaxing the bound in `requirements.txt` to whatever installs.
+
+Resolved versions in that venv ran far ahead of the floors in `requirements.txt` —
+icechunk 2.2.1, virtualizarr 2.7.3, zarr 3.4.0, xarray 2026.7.0, obstore 0.11.1,
+pandas 3.0.5 — and everything worked. That is the evidence for keeping lower bounds and
+no lock file.
+
+## Four dependencies the docs never mentioned
 
 `NetCDF3Parser` (the `daily` and `14day_v1` groups) reaches
 `kerchunk.netCDF3.NetCDF3ToZarr`, which subclasses `scipy.io._netcdf.netcdf_file`.
@@ -41,7 +61,20 @@ JupyterLab image ships both. On a bare env, the two NetCDF-3 groups fail with
 kerchunk's "pip/conda install scipy" hint while the HDF5 group works fine — which
 looks like a data problem and is not one.
 
-`requirements.txt` lists them with this reasoning inline.
+Running the notebook in a clean venv turned up two more of the same kind, invisible in the
+JupyterLab image because it ships them:
+
+- **`aiohttp`** — kerchunk reads source headers through fsspec's `HTTPFileSystem`, which is
+  async. Without it the first file to be virtualized raises `HTTPFileSystem requires
+  "requests" and "aiohttp" to be installed`. `requests` alone is not enough, despite the
+  message naming it.
+- **`dask`** — the read path in both READMEs is `xr.open_zarr(..., chunks={})`, which raises
+  `chunk manager 'dask' is not available` without it. A reader following our own
+  instructions after `pip install -r requirements.txt` would have hit that.
+
+All four are now in `requirements.txt` with the reasoning inline. The general lesson: this
+image is a generous environment, so anything it happens to ship is invisible until someone
+installs only what we declare.
 
 ## Verifying a published repo without icechunk
 
