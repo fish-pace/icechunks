@@ -12,6 +12,10 @@
 Each region is a **separate repository** because the three regions use different lat/lon
 grids and cannot share a virtual Zarr array.
 
+The stores are built by a manual run, not a live feed: the current build covers
+**2020-04-30 through 2026-08-26**. Until an automatic append is in place, the last time
+step will lag the CoastWatch archive by however long has passed since that build.
+
 These repositories do **not** copy the science data. Icechunk stores only metadata and
 byte-range references back to the original NetCDF/HDF5 files hosted at NOAA CoastWatch;
 reads are streamed directly from `coastwatch.noaa.gov` over HTTP range requests
@@ -32,7 +36,9 @@ copy of each sits alongside this README on Source Cooperative:
 
 They are provided to document how the archive was assembled and as a starting point for
 anyone building something similar. The write notebooks import shared helpers from
-`icechunk_utils.py` (included here); running them additionally requires Source Cooperative
+`icechunk_utils.py` (included here), and `requirements.txt` (also included) lists the
+package floors they were built against — note that `icechunk` 2.x requires **Python
+3.12 or newer**. Running the write notebooks additionally requires Source Cooperative
 write credentials, so for most readers they are read-along references.
 
 ## About the data
