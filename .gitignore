@@ -12,6 +12,11 @@ Untitled*
 *-creds.json
 *creds*.json
 
+# Claude Code machine-local settings. settings.local.json is per-person and per-machine
+# (it accumulates permission rules naming /tmp paths from individual sessions). A shared
+# .claude/settings.json, if we ever want one, is committed deliberately and not ignored.
+.claude/settings.local.json
+
 # OS / editor cruft
 .DS_Store
 *.swp
