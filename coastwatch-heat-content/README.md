@@ -168,6 +168,14 @@ ds = xr.concat(
 Use `chunks={}` (dask-backed) as shown — with `chunks=None` the arrays are plain NumPy
 and this concatenation eagerly materializes several GB into memory.
 
+## Reuse and citation
+
+The notebooks and helper code that built these stores are Apache-2.0 and free to reuse and
+adapt without attribution — see the
+[GitHub repository](https://github.com/fish-pace/icechunks). The **data** is a separate
+matter and is not ours: for data use and citation, follow the source product credited
+below.
+
 ## Credits
 
 - **Data:** USDOC/NOAA/NESDIS/OSPO; University of Miami / Rosenstiel School of Marine and
