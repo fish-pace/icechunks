@@ -33,7 +33,7 @@ fragment, so one build serves any store, and a group is just the last path segme
 
 - **GOBAI-O2** — [open `oxy` on the globe](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy).
   No install, no account, nothing to configure.
-- **CoastWatch OHC** — [open `ohc` for the North Atlantic](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=30.6943::lon=-56.702),
+- **CoastWatch OHC** — [open the North Atlantic on the globe](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/::px=0::py=0::alt=95910936::lat=25.0562::lon=-47.2424::dimIndices_time=0),
   **but the data will not draw in an ordinary browser**. These stores are virtual, so the
   science arrays come from `coastwatch.noaa.gov`, which sends no CORS headers and is
   therefore blocked by the browser. It renders with a CORS-disabling browser extension;

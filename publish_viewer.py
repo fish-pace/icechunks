@@ -107,29 +107,31 @@ PUBLIC = "https://data.source.coop"
 # their grids' centres (na spans lon -100..0, np 100..280, sp 130..290), so the
 # two wider basins may want a larger `alt` -- drag the globe and copy the URL.
 _OHC_BASINS = {
-    "na": ("North Atlantic", 30.6943, -56.702),
+    "na": ("North Atlantic", 25.0562, -47.2424),
     "np": ("North Pacific", 30.0, -170.0),
     "sp": ("South Pacific", -30.0, -150.0),
 }
 # Camera and time state shared by every OHC link. `alt` is the globe distance;
-# `dimIndices_time=0` opens on the first time step of the group.
-_OHC_VIEW = "px=0::py=0::alt=95910936::dimIndices_time=0"
-
-# Current product generation first: someone opening the catalog should land on
-# the group that is still growing, not the one that stopped in 2024.
-_OHC_GROUPS = ("14day", "14day_v1", "daily")
+# `dimIndices_time=0` opens on the first time step.
+_OHC_CAMERA = "px=0::py=0::alt=95910936"
 
 
 def _ohc_stores() -> dict[str, dict[str, str]]:
-    """The nine CoastWatch OHC stores, each with its basin's opening view."""
+    """One entry per CoastWatch OHC region, with that basin's opening view.
+
+    The URL stops at the repository root rather than naming a group. gridlook
+    resolves the group itself (`splitIcechunkStoreAndGroup`) and offers the
+    three -- daily, 14day_v1, 14day -- in a dropdown, along with the variables
+    in each. Linking a group and a variable would just freeze two choices the
+    viewer already presents.
+    """
     return {
-        f"{region}/{group}": {
-            "url": f"{PUBLIC}/ocean-icechunks/noaa-ohc/{region}/{group}",
-            "title": f"{name} ({region}) - {group}",
-            "view": f"{_OHC_VIEW}::lat={lat}::lon={lon}",
+        region: {
+            "url": f"{PUBLIC}/ocean-icechunks/noaa-ohc/{region}/",
+            "title": f"{name} ({region})",
+            "view": f"{_OHC_CAMERA}::lat={lat}::lon={lon}::dimIndices_time=0",
         }
         for region, (name, lat, lon) in _OHC_BASINS.items()
-        for group in _OHC_GROUPS
     }
 
 
@@ -159,7 +161,8 @@ PRODUCTS = {
         "bucket": "ocean-icechunks",
         "viewer_prefix": "noaa-ohc/viewer",
         "stores": _ohc_stores(),
-        "variables": ("ohc", "sst", "ssha", "iso26C"),
+        # No `variables`: gridlook's variable picker covers them, and which
+        # variables exist depends on the group the viewer has open.
         # gridlook loads static/catalog-extended.json on startup (see
         # HashGlobeView.vue, DEFAULT_CATALOG); static/catalog.json is not read
         # unless a link passes ::catalog=. Writing this one replaces gridlook's
@@ -206,18 +209,25 @@ def _stores(product: dict) -> dict[str, dict[str, str]]:
     return out
 
 
-def store_fragment(entry: dict, var: str) -> str:
-    """The part after `#`: the store, the variable, then the opening view."""
+def store_fragment(entry: dict, var: str | None = None) -> str:
+    """The part after `#`: the store, an optional variable, then the view."""
+    name = f"::varname={var}" if var else ""
     view = f"::{entry['view']}" if entry.get("view") else ""
-    return f"icechunk+{entry['url']}::varname={var}{view}"
+    return f"icechunk+{entry['url']}{name}{view}"
 
 
 def viewer_urls(product: dict, prefix: str) -> dict[str, str]:
+    """One link per store, or per store and variable if the product names any."""
     base = f"{PUBLIC}/{product['bucket']}/{prefix}/index.html"
+    variables = product.get("variables")
+    stores = _stores(product)
+    if not variables:
+        return {label: f"{base}#{store_fragment(entry)}"
+                for label, entry in stores.items()}
     return {
         f"{label} {var}".strip(): f"{base}#{store_fragment(entry, var)}"
-        for label, entry in _stores(product).items()
-        for var in product["variables"]
+        for label, entry in stores.items()
+        for var in variables
     }
 
 
@@ -239,7 +249,8 @@ def write_catalog(product: dict, dist: Path) -> str | None:
     spec = product.get("catalog")
     if not spec:
         return None
-    var = product["variables"][0]
+    variables = product.get("variables")
+    var = variables[0] if variables else None
     catalog = {
         "type": "gridlook_catalog",
         "title": spec["title"],
