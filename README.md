@@ -44,7 +44,7 @@ fragment, so one build serves any store, and a group is just the last path segme
   therefore blocked by the browser. It renders with a CORS-disabling browser extension;
   see [the viewer section of its README](coastwatch-heat-content/README.md#view-it-in-a-browser).
   Nothing on our side can fix this — only CoastWatch serving the header would.
-- **OA indicators** — [open aragonite saturation state on the globe](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an).
+- **OA indicators** — [open aragonite saturation state on the globe](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0).
   Also a virtual store, but this one *does* draw: `www.ncei.noaa.gov` sends
   `Access-Control-Allow-Origin: *` where CoastWatch sends nothing. The **Depth** slider
   moves through the 14 levels.

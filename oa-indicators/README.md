@@ -1,6 +1,6 @@
 # Ocean acidification indicators, North American margins — Icechunk
 
-**[🌐 View data in browser](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an)** · **[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (NCEI)](https://www.ncei.noaa.gov/data/oceans/ncei/ocads/metadata/0270962.html)** · **[📄 DOI 10.25921/g8pb-zy76](https://doi.org/10.25921/g8pb-zy76)**
+**[🌐 View data in browser](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0)** · **[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (NCEI)](https://www.ncei.noaa.gov/data/oceans/ncei/ocads/metadata/0270962.html)** · **[📄 DOI 10.25921/g8pb-zy76](https://doi.org/10.25921/g8pb-zy76)**
 
 An [Icechunk](https://icechunk.io) store of the **NCEI coastal climatology of ocean
 acidification indicators on the North American ocean margins** — twelve indicators at 14
@@ -29,15 +29,19 @@ and the science arrays straight from NCEI:
 
 | Field | Viewer |
 |---|---|
-| Aragonite saturation state | [Open `OmegaA_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an) |
-| pH (total scale) | [Open `pHT_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=pHT_an) |
-| Dissolved inorganic carbon | [Open `DIC_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=DIC_an) |
-| Total alkalinity | [Open `TA_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=TA_an) |
-| Fugacity of CO₂ | [Open `fCO2_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=fCO2_an) |
-| Revelle factor | [Open `RF_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=RF_an) |
+| Aragonite saturation state | [Open `OmegaA_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0) |
+| pH (total scale) | [Open `pHT_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=pHT_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0) |
+| Dissolved inorganic carbon | [Open `DIC_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=DIC_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0) |
+| Total alkalinity | [Open `TA_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=TA_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0) |
+| Fugacity of CO₂ | [Open `fCO2_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=fCO2_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0) |
+| Revelle factor | [Open `RF_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=RF_an::px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0) |
 
 Those are the `_an` (objectively analysed mean) fields; the viewer's own dropdown reaches
 all 72 variables, and the **Depth** slider moves through the 14 levels.
+
+The links carry an opening view — centred on the middle of the grid, at the surface — and
+the viewer's dataset picker offers this store rather than gridlook's 70 demo datasets,
+because the published copy ships its own `static/catalog-extended.json`.
 
 The viewer is [gridlook](https://github.com/eeholmes/gridlook), a WebGL globe for
 cloud-hosted Zarr and Icechunk stores, published alongside the data at
@@ -203,7 +207,7 @@ static build of gridlook and holds no data of its own.
 | When | What |
 |---|---|
 | 2026-09-17 | Built and committed, snapshot `3VZQ6VDVY2644RZ9M0Z0` (icechunk 2.2.2, virtualizarr 2.7.3) |
-| 2026-09-17 | gridlook viewer published at `oa-indicators/viewer/` (102 objects, 23.5 MB) |
+| 2026-09-17 | gridlook viewer published at `oa-indicators/viewer/`, with its own dataset catalog and an opening view |
 
 Every code block on this page was executed against the live store before it was published.
 
