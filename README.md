@@ -27,6 +27,12 @@ Public, anonymously readable, no account needed:
 | CoastWatch OHC — South Pacific | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` | virtual |
 | GOBAI-O2 v2.3 monthly, 2004–2024 | `https://data.source.coop/fish-pace/gobai-o2/monthly` | materialized |
 
+GOBAI-O2 also has a **browser viewer** — no install, no account:
+[open `oxy` on the globe](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy). It is
+[gridlook](https://github.com/eeholmes/gridlook), published beside the data by
+`publish_viewer.py`; the store to open lives in the URL fragment, so one build serves any
+store.
+
 Each CoastWatch region is a separate repository — the three use different lat/lon grids
 and cannot share a virtual array. Each holds three groups (`daily`, `14day_v1`, `14day`)
 covering different generations and encodings of the product.
@@ -76,6 +82,7 @@ gobai-o2-monthly/
   gobai-o2-monthly-icechunk-sc.ipynb   the pipeline that built the GOBAI-O2 store
   requirements.txt                 dependency floors for that notebook
 icechunk_utils.py                  Source Cooperative credential and repo helpers
+publish_viewer.py                  builds gridlook and publishes it beside a store
 requirements.txt                   dependency floors for the CoastWatch notebooks
 claude/                            working notes for AI coding agents
 ```
