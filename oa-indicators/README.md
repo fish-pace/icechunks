@@ -1,6 +1,6 @@
 # Ocean acidification indicators, North American margins — Icechunk
 
-**[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (NCEI)](https://www.ncei.noaa.gov/data/oceans/ncei/ocads/metadata/0270962.html)** · **[📄 DOI 10.25921/g8pb-zy76](https://doi.org/10.25921/g8pb-zy76)**
+**[🌐 View data in browser](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an)** · **[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (NCEI)](https://www.ncei.noaa.gov/data/oceans/ncei/ocads/metadata/0270962.html)** · **[📄 DOI 10.25921/g8pb-zy76](https://doi.org/10.25921/g8pb-zy76)**
 
 An [Icechunk](https://icechunk.io) store of the **NCEI coastal climatology of ocean
 acidification indicators on the North American ocean margins** — twelve indicators at 14
@@ -21,6 +21,36 @@ ships one NetCDF per indicator with no usable coordinates; here they are merged 
 variables on a shared, CF-compliant `(depth, lat, lon)` grid you can `sel()` into.
 
 The source accession is a finished, static product, so this store needs no update pipeline.
+
+## View it in a browser
+
+No install, no account, no download — the viewer streams chunks straight from the store,
+and the science arrays straight from NCEI:
+
+| Field | Viewer |
+|---|---|
+| Aragonite saturation state | [Open `OmegaA_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an) |
+| pH (total scale) | [Open `pHT_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=pHT_an) |
+| Dissolved inorganic carbon | [Open `DIC_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=DIC_an) |
+| Total alkalinity | [Open `TA_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=TA_an) |
+| Fugacity of CO₂ | [Open `fCO2_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=fCO2_an) |
+| Revelle factor | [Open `RF_an` in the viewer](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=RF_an) |
+
+Those are the `_an` (objectively analysed mean) fields; the viewer's own dropdown reaches
+all 72 variables, and the **Depth** slider moves through the 14 levels.
+
+The viewer is [gridlook](https://github.com/eeholmes/gridlook), a WebGL globe for
+cloud-hosted Zarr and Icechunk stores, published alongside the data at
+[`oa-indicators/viewer/`](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html). The store to open is in the URL *fragment* after `#`, so
+any store can be swapped into the same link — nothing about the viewer is specific to this
+dataset.
+
+**Unlike the CoastWatch stores in this repository, this one draws in an ordinary browser.**
+A virtual store needs CORS on two hosts, because metadata and data come from different
+places. Source Cooperative is wide open, and `www.ncei.noaa.gov` also sends
+`Access-Control-Allow-Origin: *` on ranged GETs — where `coastwatch.noaa.gov` sends no CORS
+headers at all and is therefore blocked. A `Range: bytes=a-b` header is CORS-safelisted, so
+no preflight is involved.
 
 ## How to open it
 
@@ -164,11 +194,16 @@ store can make, since the bytes stay in NCEI's files.
 - Coordinates gained `standard_name`, `units`, `axis` and — for depth — `positive: down`.
 - Each variable gained a `source` attribute naming the NetCDF file it references.
 
+The viewer is published by `publish_viewer.py` in the same repository
+(`python publish_viewer.py --product oa-indicators --build ~/gridlook`); it is a plain
+static build of gridlook and holds no data of its own.
+
 ### Provenance
 
 | When | What |
 |---|---|
 | 2026-09-17 | Built and committed, snapshot `3VZQ6VDVY2644RZ9M0Z0` (icechunk 2.2.2, virtualizarr 2.7.3) |
+| 2026-09-17 | gridlook viewer published at `oa-indicators/viewer/` (102 objects, 23.5 MB) |
 
 Every code block on this page was executed against the live store before it was published.
 

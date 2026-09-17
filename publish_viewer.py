@@ -170,6 +170,20 @@ PRODUCTS = {
             "title": "NOAA CoastWatch Ocean Heat Content",
         },
     },
+    # A climatology: no time dimension at all, and gridlook handles that. Every
+    # time-specific path in it is gated on a dimension literally named `time`
+    # and falls through to a no-op, so `(depth, lat, lon)` renders as a regular
+    # grid with a generic `depth` slider. The store's coordinates are named
+    # `lat`/`lon` rather than `latitude`/`longitude` partly for this reason --
+    # gridlook ranks the short spelling first.
+    "oa-indicators": {
+        "bucket": "ocean-icechunks",
+        "viewer_prefix": "oa-indicators/viewer",
+        "store_url": f"{PUBLIC}/ocean-icechunks/oa-indicators/climatology",
+        # The _an (objectively analysed mean) fields, which is what NCEI
+        # recommends using. The viewer's own dropdown reaches all 72.
+        "variables": ("OmegaA_an", "pHT_an", "DIC_an", "TA_an", "fCO2_an", "RF_an"),
+    },
 }
 DEFAULT_DIST = Path("/tmp/gridlook-dist")
 
