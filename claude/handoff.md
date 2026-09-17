@@ -15,6 +15,11 @@ uncommitted for three weeks, so `main` still called the rebuild "in progress".
 PR #12 fixes that. See [notes/ohc-rebuild-2026-08-26.md](notes/ohc-rebuild-2026-08-26.md)
 for what the run actually did — snapshot IDs, timings, and the corrupt-file drops.
 
+**Before running anything:** the JupyterLab image is Python 3.11.14 and `icechunk` is
+not installed in it. icechunk 2.x is published `requires_python = ">=3.12"`, so it
+cannot be installed there at all — the notebooks are currently unrunnable in the
+kernel env. See [notes/environment.md](notes/environment.md).
+
 ## Working principles for this repo
 
 - **The notebook outputs *are* the build log.** There is no separate log file. If a
@@ -32,9 +37,17 @@ for what the run actually did — snapshot IDs, timings, and the corrupt-file dr
 
 ## Recently shipped
 
+- **Docs mirror completed 2026-09-17.** All six files are at `noaa-ohc/` and
+  anonymous-readable: `README.md`, `requirements.txt`, `icechunk_utils.py` and the
+  three notebooks. Three of them had 404ed since the first build while the README
+  claimed they were "included here". `requirements.txt` is new — see
+  [notes/environment.md](notes/environment.md) for the two dependency findings behind
+  it, one of which blocks re-running the notebooks in the current image.
+- **PR #13** (open, stacked on #12) — `requirements.txt`, the widened mirror list, and
+  the CLAUDE.md updates that mark the mirror done.
 - **PR #12** (open, not merged) — commits the executed production notebook and
   rewrites CLAUDE.md's status section: rebuild done, coverage table, corrupt-file
-  drops, mirror gap.
+  drops. Merge this before #13; both touch the production notebook.
 - **PR #8** — re-pointed the destination from `fish-pace/coastwatch/ocean-heat` to
   `ocean-icechunks/noaa-ohc` across notebooks, README, CLAUDE.md, `icechunk_utils.py`.
 - **PRs #3–#6** — the original build under `fish-pace/coastwatch/ocean-heat`, plus
@@ -42,11 +55,6 @@ for what the run actually did — snapshot IDs, timings, and the corrupt-file dr
 
 ## Open threads
 
-- **Docs mirror at `noaa-ohc/` is incomplete.** `icechunk_utils.py`,
-  `ocean-heat-test-sc.ipynb` and `ocean-heat-test-local.ipynb` 404 — the mirror cell
-  uploads only `README.md` and the production notebook. The published production
-  notebook is also the pre-run copy (~284 KB) rather than the executed one, so a
-  decision is needed on whether the published copy should carry outputs.
 - **Auto-update pipeline — undesigned.** `write_group` skips groups that already
   exist, but nothing appends *new time steps* to an existing group. Until that path
   exists the repos are frozen at the last manual run and drift behind CoastWatch.
