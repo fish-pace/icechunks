@@ -28,14 +28,15 @@ Coverage as built (2020-04-30 → 2026-08-26), from the executed notebook's outp
 Corrupt source files are dropped by design (`open_region` counts them); the per-region counts
 differ because the bad files are in the source archive, not in our handling of it.
 
+**Docs mirror (done 2026-09-17):** all six files are now at `noaa-ohc/` — `README.md`,
+`requirements.txt`, `icechunk_utils.py` and the three notebooks — anonymous-readable with correct
+content types. Previously only `README.md` and the production notebook had ever been uploaded, so
+the other three 404ed while the README claimed they were "included here". The mirror cell's
+`files_to_upload` now lists all six, and the published production notebook is the executed copy
+(~1.2 MB) rather than the stripped one.
+
 **Next tasks (design open):**
-1. **Finish the docs mirror at the destination root.** Only `README.md` and
-   `ocean-heat-production-sc.ipynb` are actually at `noaa-ohc/`; the inventory below also promises
-   `icechunk_utils.py`, `ocean-heat-test-sc.ipynb` and `ocean-heat-test-local.ipynb`, which 404.
-   The mirror cell's `files_to_upload` lists only the two. The mirrored production notebook is also
-   the pre-run copy (~284 KB) rather than the executed one — decide whether the published copy
-   should carry outputs, then sync.
-2. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.**
+1. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.**
    `write_group` is already idempotent/append-friendly (skips groups that exist), but it does not
    yet append *new time steps* to an existing group — that appending path, plus scheduling/triggering
    when new source files appear, still needs to be figured out. Until it exists the repos stay frozen
@@ -43,18 +44,32 @@ differ because the bad files are in the source archive, not in our handling of i
 
 ## Required packages
 
-The following will need to be run if icechunk is not installed. Do not use conda as the env will not solve.
+Install from `requirements.txt` at the repo root — lower bounds, no lock file, reasoning inline.
+It is also mirrored to the destination root, so a reader who finds the repos on Source Cooperative
+gets the pins with them.
+
 ```
-pip install -q "icechunk>=2.1" "virtualizarr>=2.4" 
+pip install -r requirements.txt
 ```
+
+Do not use conda; the env will not solve. Two constraints that bite:
+
+- **Python >= 3.12 is required.** Every `icechunk` 2.x release is published
+  `requires_python = ">=3.12"`. The JupyterLab image is currently Python 3.11.14, where
+  `pip install "icechunk>=2.1"` finds no matching distribution at all (pip sees only the 1.1.x
+  line). The 2026-08-26 production run was on 3.12. See `claude/notes/environment.md` before
+  trying to work around it.
+- **The NetCDF-3 groups need `kerchunk` and `scipy`**, which the notebooks' own inline pip lines
+  omit — `NetCDF3Parser` calls `kerchunk.netCDF3.NetCDF3ToZarr`, which subclasses scipy's
+  `netcdf_file`. They are satisfied in the image by luck, not by declaration.
+  `requirements.txt` lists them.
 
 ## Running notebooks
 
-Notebooks run in JupyterLab. To install dependencies (when needed, each notebook documents its own):
-
-```bash
-pip install "icechunk>=2.1" "virtualizarr>=2.4" xarray obspec_utils obstore h5netcdf requests matplotlib
-```
+Notebooks run in JupyterLab. Install with `pip install -r requirements.txt` (see above); each
+notebook also carries a commented pip line of its own, kept so a notebook downloaded standalone
+from Source Cooperative is self-describing — those lines predate `requirements.txt` and omit
+`kerchunk`/`scipy`.
 
 The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.ipynb`) import shared helpers from `icechunk_utils.py`. It lives at the repo root (the notebooks add `..` to `sys.path`); when a notebook is downloaded standalone from Source Cooperative, `icechunk_utils.py` sits **alongside** it (Jupyter puts the notebook's own directory on `sys.path`, so the co-located copy imports without changes). `ocean-heat-test-local.ipynb` needs no helpers and is fully self-contained.
 
@@ -127,4 +142,4 @@ config.manifest.max_concurrent_manifest_fetches_during_commit = 16
 
 Each CoastWatch OHC region is a **separate repo** (different lat/lon grids). Every region repo has three groups: `daily` (original `{region}` product, NetCDF-3), `14day_v1` (`{region}14` NetCDF-3 big-endian), `14day` (`{region}14` HDF5 little-endian). The `14day_v1`/`14day` split is at 2025 day 084/085; the `daily`/`14day` split is a variable-set/product-generation difference.
 
-The `noaa-ohc/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `icechunk_utils.py`, and the three notebooks (`ocean-heat-test-local.ipynb`, `ocean-heat-test-sc.ipynb`, `ocean-heat-production-sc.ipynb`). These are reference/reproducibility copies; keep them in sync when the git versions change.
+The `noaa-ohc/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `requirements.txt`, `icechunk_utils.py`, and the three notebooks (`ocean-heat-test-local.ipynb`, `ocean-heat-test-sc.ipynb`, `ocean-heat-production-sc.ipynb`). These are reference/reproducibility copies; keep them in sync when the git versions change — the last cell of `ocean-heat-production-sc.ipynb` uploads all six, and `requirements.txt` and `icechunk_utils.py` come from the repo root via `../`, flattened onto the destination root by `path.name`.
