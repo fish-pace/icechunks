@@ -1,6 +1,6 @@
 # NOAA CoastWatch Ocean Heat Content — Icechunk
 
-**[🌐 View data in browser](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day::varname=ohc)** · **[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (CoastWatch)](https://coastwatch.noaa.gov/pub/socd2/coastwatch/ocean_heat/)**
+**[🌐 View data in browser](#view-it-in-a-browser)** · **[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (CoastWatch)](https://coastwatch.noaa.gov/pub/socd2/coastwatch/ocean_heat/)**
 
 [Icechunk](https://icechunk.io) stores of the full **NOAA CoastWatch Ocean Heat Content
 (OHC) Product Suite** archive — upper-ocean heat content, SST, sea surface height anomaly
@@ -51,14 +51,19 @@ account, no download:
 
 | Region | `daily` | `14day_v1` | `14day` (current) |
 |---|---|---|---|
-| North Atlantic | [`na/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/daily::varname=ohc) | [`na/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day_v1::varname=ohc) | [`na/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day::varname=ohc) |
-| North Pacific | [`np/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/daily::varname=ohc) | [`np/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/14day_v1::varname=ohc) | [`np/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/14day::varname=ohc) |
-| South Pacific | [`sp/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/daily::varname=ohc) | [`sp/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/14day_v1::varname=ohc) | [`sp/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/14day::varname=ohc) |
+| North Atlantic | [`na/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/daily::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=30.6943::lon=-56.702) | [`na/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day_v1::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=30.6943::lon=-56.702) | [`na/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=30.6943::lon=-56.702) |
+| North Pacific | [`np/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/daily::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=30.0::lon=-170.0) | [`np/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/14day_v1::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=30.0::lon=-170.0) | [`np/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/14day::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=30.0::lon=-170.0) |
+| South Pacific | [`sp/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/daily::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=-30.0::lon=-150.0) | [`sp/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/14day_v1::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=-30.0::lon=-150.0) | [`sp/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/14day::varname=ohc::px=0::py=0::alt=95910936::dimIndices_time=0::lat=-30.0::lon=-150.0) |
 
-Those links open `ohc`. Any other variable works the same way — edit `varname=` at the end
-of the URL to `sst`, `ssha`, `iso26C` and so on. Everything after `#` is a URL *fragment*,
-which the host never sees, so one viewer build serves every store and group; the group is
-simply the last path segment of the store URL.
+Each link opens `ohc` centred on that basin, on the first time step. Any other variable
+works the same way — change `varname=` in the URL to `sst`, `ssha`, `iso26C` and so on. The
+viewer's own dataset picker lists all nine stores, so you can switch basin or group without
+coming back here.
+
+Everything after `#` is a URL *fragment*, which the host never sees, so one viewer build
+serves every store and group: the group is simply the last path segment of the store URL,
+and `lat`/`lon`/`alt` are the camera. Drag the globe and the address bar updates — copy it
+to share the exact view you are looking at.
 
 The viewer is [gridlook](https://github.com/eeholmes/gridlook), a WebGL globe for
 cloud-hosted Zarr and Icechunk stores, published alongside the data at

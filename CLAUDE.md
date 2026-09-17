@@ -79,6 +79,21 @@ or proxying the source and rebuilding every store against the proxy prefix. It i
 published anyway because it renders for anyone running a CORS-disabling browser
 extension, and it is then in place for the day the header appears.
 
+**The dataset picker is fed by `static/catalog-extended.json`, not `static/catalog.json`.**
+`HashGlobeView.vue` sets `DEFAULT_CATALOG = "static/catalog-extended.json"`; `catalog.json`
+is never read unless a link passes `::catalog=<url>`. gridlook ships 70 unrelated demo
+datasets in it, so `publish_viewer.py` writes a product-specific replacement **into the
+build output** at publish time (`write_catalog`, driven by the `catalog` key in `PRODUCTS`)
+— never into the gridlook checkout, which would bake one product's catalog into every other
+product's viewer and stamp the build `gridlook_dirty`. A catalog entry's `url` becomes the
+location hash verbatim, so it carries `varname` and the camera with it.
+
+Camera state rides in the same fragment: `px`, `py`, `alt`, `lat`, `lon` and
+`dimIndices_<dim>` (see `STORE_PARAM_MAPPING` in `paramStore.ts`). The three OHC basins
+need different `lat`/`lon` because they cover different parts of the globe — `_OHC_BASINS`
+holds them. Dragging the globe rewrites the address bar, so the way to get a good opening
+view is to position it and copy the URL, not to compute one.
+
 What Source Cooperative does and does not do for a static site (checked 2026-09-17):
 
 - **CORS is wide open** — `access-control-allow-origin: *`, all headers exposed, `Range`

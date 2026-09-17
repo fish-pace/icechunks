@@ -101,6 +101,38 @@ from icechunk_utils import get_source_credentials
 
 PUBLIC = "https://data.source.coop"
 
+# Each basin needs its own opening view: the three grids cover different parts of
+# the globe, so no single camera position frames all of them. `lat`/`lon` are the
+# point the globe centres on. The na values are a hand-placed view; np and sp use
+# their grids' centres (na spans lon -100..0, np 100..280, sp 130..290), so the
+# two wider basins may want a larger `alt` -- drag the globe and copy the URL.
+_OHC_BASINS = {
+    "na": ("North Atlantic", 30.6943, -56.702),
+    "np": ("North Pacific", 30.0, -170.0),
+    "sp": ("South Pacific", -30.0, -150.0),
+}
+# Camera and time state shared by every OHC link. `alt` is the globe distance;
+# `dimIndices_time=0` opens on the first time step of the group.
+_OHC_VIEW = "px=0::py=0::alt=95910936::dimIndices_time=0"
+
+# Current product generation first: someone opening the catalog should land on
+# the group that is still growing, not the one that stopped in 2024.
+_OHC_GROUPS = ("14day", "14day_v1", "daily")
+
+
+def _ohc_stores() -> dict[str, dict[str, str]]:
+    """The nine CoastWatch OHC stores, each with its basin's opening view."""
+    return {
+        f"{region}/{group}": {
+            "url": f"{PUBLIC}/ocean-icechunks/noaa-ohc/{region}/{group}",
+            "title": f"{name} ({region}) - {group}",
+            "view": f"{_OHC_VIEW}::lat={lat}::lon={lon}",
+        }
+        for region, (name, lat, lon) in _OHC_BASINS.items()
+        for group in _OHC_GROUPS
+    }
+
+
 # One entry per repo that gets a viewer. `variables` are the data variables
 # offered as links; the viewer opens one at a time. A product names either a
 # single `store_url`, or `stores` mapping a label to a store URL where one
@@ -126,12 +158,17 @@ PRODUCTS = {
     "noaa-ohc": {
         "bucket": "ocean-icechunks",
         "viewer_prefix": "noaa-ohc/viewer",
-        "stores": {
-            f"{region}/{group}": f"{PUBLIC}/ocean-icechunks/noaa-ohc/{region}/{group}"
-            for region in ("na", "np", "sp")
-            for group in ("daily", "14day_v1", "14day")
-        },
+        "stores": _ohc_stores(),
         "variables": ("ohc", "sst", "ssha", "iso26C"),
+        # gridlook loads static/catalog-extended.json on startup (see
+        # HashGlobeView.vue, DEFAULT_CATALOG); static/catalog.json is not read
+        # unless a link passes ::catalog=. Writing this one replaces gridlook's
+        # 70 demo datasets with just these stores -- in the published copy only,
+        # never in the gridlook checkout.
+        "catalog": {
+            "path": "static/catalog-extended.json",
+            "title": "NOAA CoastWatch Ocean Heat Content",
+        },
     },
 }
 DEFAULT_DIST = Path("/tmp/gridlook-dist")
@@ -158,14 +195,70 @@ CONTENT_TYPES = {
 }
 
 
+def _stores(product: dict) -> dict[str, dict[str, str]]:
+    """Normalize `stores` / `store_url` to {label: {url, title, view}}."""
+    raw = product.get("stores") or {"": product["store_url"]}
+    out = {}
+    for label, entry in raw.items():
+        if isinstance(entry, str):
+            entry = {"url": entry}
+        out[label] = {"title": label, "view": "", **entry}
+    return out
+
+
+def store_fragment(entry: dict, var: str) -> str:
+    """The part after `#`: the store, the variable, then the opening view."""
+    view = f"::{entry['view']}" if entry.get("view") else ""
+    return f"icechunk+{entry['url']}::varname={var}{view}"
+
+
 def viewer_urls(product: dict, prefix: str) -> dict[str, str]:
     base = f"{PUBLIC}/{product['bucket']}/{prefix}/index.html"
-    stores = product.get("stores") or {"": product["store_url"]}
     return {
-        f"{label} {var}".strip(): f"{base}#icechunk+{url}::varname={var}"
-        for label, url in stores.items()
+        f"{label} {var}".strip(): f"{base}#{store_fragment(entry, var)}"
+        for label, entry in _stores(product).items()
         for var in product["variables"]
     }
+
+
+def write_catalog(product: dict, dist: Path) -> str | None:
+    """Replace gridlook's default catalog with one listing only this product.
+
+    gridlook reads `static/catalog-extended.json` on load and offers its entries
+    in the dataset picker. Its shipped copy is 70 unrelated demo datasets, which
+    is noise beside a single product. Each published viewer therefore gets a
+    catalog of its own stores instead.
+
+    Written into the build output, never into the gridlook checkout: the
+    checkout stays clean, every build stays traceable to a gridlook commit
+    (`build-info.json`), and no other product's viewer is affected.
+
+    A catalog entry's `url` becomes the location hash verbatim, so it carries
+    the variable and the opening view with it.
+    """
+    spec = product.get("catalog")
+    if not spec:
+        return None
+    var = product["variables"][0]
+    catalog = {
+        "type": "gridlook_catalog",
+        "title": spec["title"],
+        "datasets": [
+            {
+                "title": entry["title"],
+                "url": store_fragment(entry, var),
+                "format": "Icechunk",
+                "access": "direct",
+                "grid": "regular",
+                "crs": "EPSG:4326",
+            }
+            for entry in _stores(product).values()
+        ],
+    }
+    path = dist / spec["path"]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(catalog, indent=2) + "\n")
+    return spec["path"]
 
 
 def build(gridlook: Path, dist: Path) -> None:
@@ -284,6 +377,10 @@ def main() -> None:
 
     if args.build:
         build(args.build, args.dist)
+    # Before plan(), so the catalog is part of the upload set.
+    written = write_catalog(product, args.dist)
+    if written:
+        print(f"wrote {written} listing {len(_stores(product))} stores")
     rows = plan(args.dist)
     size = sum(p.stat().st_size for p, *_ in rows)
     print(f"{len(rows)} files, {size / 2**20:.1f} MB -> s3://{bucket}/{prefix}/")
