@@ -96,8 +96,12 @@ The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.i
 
 - **Source Cooperative write credentials come from the `source-coop` CLI, not from a file in this repo.** `icechunk_utils.get_source_credentials()` shells out to `source-coop creds` and then reads the CLI's own cache at `~/.cache/source-coop/credentials/_default.json`. Any `*creds*.json` sitting in the working tree is a leftover from an older workflow; it is gitignored and nothing reads it. These are short-TTL STS tokens — refresh with a browser login:
   ```bash
-  /home/jovyan/.cargo/bin/source-coop login --duration 1d --port 8400
+  source-coop login --duration 1d --port 8400
   ```
+  The CLI lives at `~/.cargo/bin/source-coop` on this hub and is not on `$PATH` by default;
+  `icechunk_utils` finds it via `$SOURCE_COOP_CLI`, then `$PATH`, then `~/.cargo/bin`. The
+  login flow is served on the given port — reach it through the hub proxy at
+  `<hub-url>/user/<username>/proxy/8400/`.
   A full rebuild takes about 2.5 hours, so ask for a duration well beyond that. Note that `open_source_icechunk_repo` stops cleanly only when the token is **already** expired — its `min_minutes_left` argument is currently accepted and ignored, so it will happily start a two-hour write on a token with ten minutes left. `wait_for_fresh_repo` does implement the check.
 - Public Icechunk repos on Source Coop can be read anonymously via `icechunk.http_storage(url)`.
 - NOAA S3 sources use `skip_signature=True` / `anonymous=True`.
