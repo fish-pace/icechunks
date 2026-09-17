@@ -1,0 +1,44 @@
+# Dependencies for gobai-o2-monthly-icechunk-sc.ipynb, which builds the materialized
+# GOBAI-O2 v2.3 Icechunk store at fish-pace/gobai-o2/monthly.
+#
+#     pip install -r requirements.txt
+#
+# Separate from the repository-root requirements.txt on purpose: that file is for the
+# CoastWatch *virtual* pipeline and carries virtualizarr, kerchunk, obstore and friends,
+# none of which this notebook uses. This one writes real Zarr chunks with plain Xarray.
+#
+# Lower bounds only, no lock file — the same convention as the root file. The bounds are
+# the versions in a clean Python 3.12 venv on 2026-09-17, in which the notebook was run
+# end to end with RUN_WRITE=False (source streamed from NCEI, published store validated).
+# The versions behind the original 2026-08-06 build were not recorded beyond
+# icechunk 2.1.2.
+#
+# REQUIRES PYTHON >= 3.12. Every icechunk 2.x release is published
+# `requires_python = ">=3.12"`, so on 3.11 `pip install "icechunk>=2.1"` resolves to
+# nothing at all. The JupyterLab image is currently 3.11; build a venv from
+# /srv/conda/bin/python3.12 (see ../claude/notes/environment.md).
+
+icechunk>=2.1
+zarr>=3.1.5
+xarray>=2026.2.0
+
+# The source is read with engine='netcdf4'. That engine, not h5netcdf, is the one that
+# understands the '#mode=bytes' URL suffix used to stream the 12 GB file straight off
+# NCEI's HTTPS server without downloading it. h5netcdf is listed because it is the
+# faster choice once a local copy exists, and is what the 2026-08-06 build used.
+netCDF4>=1.7.4
+h5netcdf>=1.8.1
+
+# xr.open_dataset(..., chunks=...) and open_zarr(..., chunks={}) both need a chunk
+# manager; without dask they raise "chunk manager 'dask' is not available". The write
+# also depends on dask to stream the source instead of loading 12 GB into memory.
+dask[array]>=2026.1
+
+numpy>=2.3
+pandas>=2.3
+
+# Only the last cell, which mirrors the docs to the store root on Source Cooperative.
+boto3>=1.42
+
+# The two verification plots in section 6.
+matplotlib>=3.10
