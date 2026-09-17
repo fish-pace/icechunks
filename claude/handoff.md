@@ -215,6 +215,14 @@ See "The CoastWatch OHC viewer" above.*
 - **Whether the OHC viewer renders with a CORS extension is unconfirmed** — transport is
   verified from here (102 objects 200 with correct types, `application/wasm`, store reads 206
   with `access-control-allow-origin: *`), the rendering is not. Same gap as the OA viewer.
+- **The docs mirror was done by an ad-hoc script, not by the notebook.** Re-running
+  `ocean-heat-production-sc.ipynb` just to sync five files means a 2.5-hour rebuild first,
+  so 2026-09-17's three mirrors used a throwaway script in the session scratchpad, now gone.
+  Worth making it a committed `mirror_docs.py` beside `publish_viewer.py`. Note also that
+  the notebook's mirror cell passes **no `ContentType`** — the prefix currently serves
+  `text/markdown`, `text/x-python` and `application/x-ipynb+json` correctly, and since
+  Source Cooperative serves types as uploaded and never infers them, a full rebuild could
+  silently downgrade them to `binary/octet-stream`. The ad-hoc script set them explicitly.
 - **Cosmetic:** the production notebook's kernel metadata records Python 3.11.14 (from being
   opened, not run); the test notebooks say 3.12.12, which is the truthful one.
 - `ocean-icechunks/test-repo/noaa-ohc` holds 84 objects from verification runs. Deliberately
