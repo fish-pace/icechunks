@@ -25,14 +25,19 @@ requires.
 ## How these were built
 
 The notebooks that built these stores live in the GitHub repository
-**<https://github.com/fish-pace/icechunks>** (directory `coastwatch-heat-content/`), and a
-copy of each sits alongside this README on Source Cooperative:
+**<https://github.com/fish-pace/icechunks>** (directory `coastwatch-heat-content/`). Two of
+them sit alongside this README on Source Cooperative:
 
-| Notebook | What it shows |
-|---|---|
-| `ocean-heat-test-local.ipynb` | Minimal proof of concept: CoastWatch NetCDF → VirtualiZarr → a **local** Icechunk store. |
-| `ocean-heat-test-sc.ipynb`    | Minimal proof of concept writing to Icechunk on **Source Cooperative**. |
-| `ocean-heat-production-sc.ipynb` | The full parametrized pipeline that built all three region repos (`na`/`np`/`sp`). |
+| Notebook | What it shows | Here? |
+|---|---|---|
+| `ocean-heat-test-local.ipynb` | Minimal proof of concept: CoastWatch NetCDF → VirtualiZarr → a **local** Icechunk store. | yes |
+| `ocean-heat-production-sc.ipynb` | The full parametrized pipeline that built all three region repos (`na`/`np`/`sp`). | yes |
+| `ocean-heat-test-sc.ipynb` | Minimal proof of concept writing to Icechunk on Source Cooperative. | GitHub only |
+
+`ocean-heat-test-sc.ipynb` is kept in the GitHub repository rather than here because its
+saved outputs are working scratch state rather than a clean run, and it writes to a
+private prefix — `ocean-heat-test-local.ipynb` is the better starting point, and it needs
+no credentials at all.
 
 They are provided to document how the archive was assembled and as a starting point for
 anyone building something similar. The write notebooks import shared helpers from

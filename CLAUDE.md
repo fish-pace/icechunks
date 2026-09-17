@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A collection of Jupyter notebooks that demonstrate the pattern: **source NetCDF files → VirtualiZarr (virtual references) → Icechunk repository**. The large science arrays are never copied; Icechunk stores metadata and byte-range references back to the originals.
+Jupyter notebooks that demonstrate the pattern **source NetCDF files → VirtualiZarr (virtual references) → Icechunk repository**, applied to one dataset: the NOAA CoastWatch Ocean Heat Content archive, in `coastwatch-heat-content/`. The large science arrays are never copied; Icechunk stores metadata and byte-range references back to the originals. Sibling repos apply the same pattern to other datasets — see "Skills and related repos" below.
 
 ## Status & roadmap (last updated 2026-09-17)
 
@@ -41,6 +41,15 @@ the other three 404ed while the README claimed they were "included here". The mi
    yet append *new time steps* to an existing group — that appending path, plus scheduling/triggering
    when new source files appear, still needs to be figured out. Until it exists the repos stay frozen
    at the last manual run, so they drift behind the source archive by however long since.
+
+## Skills and related repos
+
+- **`virtual-icechunk` skill** — <https://github.com/nmfs-opensci/agent-skills> (`skills/virtual-icechunk/`, checked out locally at `~/agent-skills`). The shared, agent-independent guidance for building, validating, documenting and auditing virtual Icechunk stores. Prefer it over re-deriving practice from this repo's notebooks, and feed genuinely new lessons back into it rather than only into this file.
+- **Sibling repos using the same pattern**, each with its own notebooks and destinations — they are *not* in this repo:
+  - `~/cefi-icechunks` — NOAA CEFI MOM6 (`https://data.source.coop/eeholmes/cefi/nepacific-icechunk`, groups `daily/regrid/main`, `daily/regrid/aux`; the yearly-file vs. full-period-file split is why it has two groups).
+  - `~/pace-icechunks` — PACE ocean colour.
+  - `~/gobai-rfrom-icechunks` — GOBAI-O2 / RFROM, the source of the `requirements.txt` style used here.
+  - GlobColour/Copernicus CHL — `https://data.source.coop/fish-pace/globcolour/cmems_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D`.
 
 ## Required packages
 
@@ -85,24 +94,32 @@ The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.i
 
 ## Credentials
 
-- **Source Cooperative write credentials**: stored in local JSON files (`source-creds.json`, `source-cefi-creds.json`, `globcolour-source-creds.json`). These are temporary STS tokens with short TTL. Refresh with:
+- **Source Cooperative write credentials come from the `source-coop` CLI, not from a file in this repo.** `icechunk_utils.get_source_credentials()` shells out to `source-coop creds` and then reads the CLI's own cache at `~/.cache/source-coop/credentials/_default.json`. Any `*creds*.json` sitting in the working tree is a leftover from an older workflow; it is gitignored and nothing reads it. These are short-TTL STS tokens — refresh with a browser login:
   ```bash
   /home/jovyan/.cargo/bin/source-coop login --duration 1d --port 8400
   ```
+  A full rebuild takes about 2.5 hours, so ask for a duration well beyond that. Note that `open_source_icechunk_repo` stops cleanly only when the token is **already** expired — its `min_minutes_left` argument is currently accepted and ignored, so it will happily start a two-hour write on a token with ten minutes left. `wait_for_fresh_repo` does implement the check.
 - Public Icechunk repos on Source Coop can be read anonymously via `icechunk.http_storage(url)`.
 - NOAA S3 sources use `skip_signature=True` / `anonymous=True`.
 - CoastWatch HTTPS requires a browser-like User-Agent header; the default `python-requests` UA returns 403.
 
 ## Notebook inventory (`coastwatch-heat-content/`)
 
-| Notebook | Source | Icechunk destination |
+All three notebooks read the same source — NOAA CoastWatch OHC over HTTPS.
+
+| Notebook | Icechunk destination | Mirrored to Source Coop? |
 |---|---|---|
-| `virtualizarr_coastwatch_ohc_http_icechunk_demo.ipynb` | NOAA CoastWatch HTTPS NetCDF (OHC) | Local filesystem |
-| `ocean-heat-test-local.ipynb` | NOAA CoastWatch HTTPS NetCDF (OHC) | Local filesystem — minimal proof-of-concept example |
-| `ocean-heat-test-sc.ipynb` | NOAA CoastWatch HTTPS NetCDF (OHC) | Source Coop — minimal proof-of-concept example |
-| `ocean-heat-production-sc.ipynb` | NOAA CoastWatch HTTPS NetCDF/HDF5 (OHC full archive, na/np/sp) | Source Coop (`ocean-icechunks/noaa-ohc/{na,np,sp}`) |
-| `cefi_nep_daily-regrid.ipynb` | NOAA CEFI MOM6 S3 NetCDF | Source Coop (`eeholmes/cefi/nepacific-icechunk`) |
-| `copernicus-icechunk-sc.ipynb` | Copernicus GlobColour HTTPS | Source Coop (`fish-pace/globcolour/...`) |
+| `ocean-heat-test-local.ipynb` | Local filesystem — minimal proof of concept, no credentials needed | yes |
+| `ocean-heat-test-sc.ipynb` | Source Coop — minimal proof of concept | **no, git only** |
+| `ocean-heat-production-sc.ipynb` | Source Coop (`ocean-icechunks/noaa-ohc/{na,np,sp}`) | yes |
+
+`ocean-heat-test-sc.ipynb` is deliberately not published: its stored outputs are scratch
+state (non-monotonic execution counts, produced before the destination re-point), and it
+is still configured to write into the **production** prefix — `SC_PREFIX = 'noaa-ohc'`
+with `GROUP = 'test'` — so running it would drop a stray repo at the docs root. Give it
+its own prefix before running it. Its "delete everything" cell is also aimed at the whole
+`noaa-ohc/` prefix and is guarded only by a `%%script false` magic, unlike the production
+notebook's `RUN_CLEAR` flag.
 
 ## Key gotchas
 
@@ -112,8 +129,8 @@ The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.i
 - **`save_config()` is required for anonymous readers.** `Repository.open(storage, config=...)` uses the config only for the current session. To persist the `VirtualChunkContainer` so anonymous reopeners pick it up, call `repo.save_config()` after open/create.
 - **Scalar vs. slice indexing on virtual arrays**: prefer `isel(time=slice(0,1), z_l=slice(0,1)).squeeze(drop=True)` over `isel(time=0, z_l=0)` to avoid loading unexpectedly large chunks.
 - **Writable sessions are single-use**: after `session.commit()`, call `repo.writable_session("main")` again before writing more data.
-- **Variables with different file layouts cannot be merged virtually**: the CEFI notebook stores yearly-file variables in `daily/regrid/main` and full-period-file variables in `daily/regrid/aux` for this reason.
-- **Time-coordinate repair**: some source files have corrupt/duplicate time coordinates. Use a trusted template variable (e.g., `chlos`) to repair before passing to `vds.vz.to_icechunk`.
+- **Variables with different file layouts cannot be merged virtually** — they need separate groups. Here that is why `daily`/`14day_v1`/`14day` are three groups rather than one array.
+- **Coordinate repair before writing.** Some CoastWatch files carry all-zero lat/lon grids. `build_grid_template` probes the first files for a valid grid and `make_repair` substitutes it as a `preprocess` hook on `open_virtual_mfdataset`; files that still fail to open are dropped and counted. The same hook strips NaN attributes, which Zarr metadata (JSON) cannot represent.
 
 ## Manifest splitting (large repos)
 
@@ -134,12 +151,10 @@ config.manifest.max_concurrent_manifest_fetches_during_commit = 16
 
 | Dataset | URL |
 |---|---|
-| CEFI NEP daily regrid | `https://data.source.coop/eeholmes/cefi/nepacific-icechunk` (groups: `daily/regrid/main`, `daily/regrid/aux`) |
-| GlobColour/Copernicus CHL | `https://data.source.coop/fish-pace/globcolour/cmems_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D` |
 | CoastWatch OHC — North Atlantic (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/na` |
 | CoastWatch OHC — North Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` |
 | CoastWatch OHC — South Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` |
 
 Each CoastWatch OHC region is a **separate repo** (different lat/lon grids). Every region repo has three groups: `daily` (original `{region}` product, NetCDF-3), `14day_v1` (`{region}14` NetCDF-3 big-endian), `14day` (`{region}14` HDF5 little-endian). The `14day_v1`/`14day` split is at 2025 day 084/085; the `daily`/`14day` split is a variable-set/product-generation difference.
 
-The `noaa-ohc/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `requirements.txt`, `icechunk_utils.py`, and the three notebooks (`ocean-heat-test-local.ipynb`, `ocean-heat-test-sc.ipynb`, `ocean-heat-production-sc.ipynb`). These are reference/reproducibility copies; keep them in sync when the git versions change — the last cell of `ocean-heat-production-sc.ipynb` uploads all six, and `requirements.txt` and `icechunk_utils.py` come from the repo root via `../`, flattened onto the destination root by `path.name`.
+The `noaa-ohc/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `requirements.txt`, `icechunk_utils.py`, `ocean-heat-production-sc.ipynb` and `ocean-heat-test-local.ipynb` — five files, **not** `ocean-heat-test-sc.ipynb` (see the inventory above). These are reference/reproducibility copies; keep them in sync when the git versions change. The last cell of `ocean-heat-production-sc.ipynb` uploads the set; `requirements.txt` and `icechunk_utils.py` come from the repo root via `../`, flattened onto the destination root by `path.name`.
