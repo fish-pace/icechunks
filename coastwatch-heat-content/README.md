@@ -146,6 +146,10 @@ print(ds_daily)
 CoastWatch blocks the default `python-requests` User-Agent, but Icechunk sends its own
 (`icechunk-rust-x.y.z`), so no custom headers are needed for reads.
 
+If a read raises `StorageError: error fetching virtual reference ... connection closed
+before message completed`, retry it. CoastWatch's HTTPS endpoint is slow and occasionally
+drops connections; the reference is fine, and the same read succeeds on a retry.
+
 ### One continuous time series across groups
 
 ```python

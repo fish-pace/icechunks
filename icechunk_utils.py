@@ -4,22 +4,50 @@ temporary credentials managed by the source-coop CLI.
 """
 
 import json
+import os
+import shutil
 import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import icechunk
 
-SOURCE_COOP_CLI = "/home/jovyan/.cargo/bin/source-coop"
-_DEFAULT_CREDS_CACHE = "/home/jovyan/.cache/source-coop/credentials/_default.json"
+
+def _default_cli() -> str:
+    """Locate the source-coop CLI: $SOURCE_COOP_CLI, then $PATH, then ~/.cargo/bin."""
+    return (
+        os.environ.get("SOURCE_COOP_CLI")
+        or shutil.which("source-coop")
+        or str(Path.home() / ".cargo" / "bin" / "source-coop")
+    )
 
 
-def get_source_credentials(creds_cache: str = _DEFAULT_CREDS_CACHE):
+def _default_creds_cache() -> str:
+    """The CLI's own credential cache, honoring $XDG_CACHE_HOME."""
+    if env := os.environ.get("SOURCE_COOP_CREDS_CACHE"):
+        return env
+    cache_home = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
+    return str(cache_home / "source-coop" / "credentials" / "_default.json")
+
+
+SOURCE_COOP_CLI = _default_cli()
+_DEFAULT_CREDS_CACHE = _default_creds_cache()
+
+_LOGIN_HINT = f"Run: {SOURCE_COOP_CLI} login --duration 1d --port 8400"
+
+
+def get_source_credentials(creds_cache: str | None = None):
     """
     Refresh and return Source Cooperative temporary credentials.
 
     Calls the source-coop CLI to ensure the cached token is up to date,
     then reads the credentials from the cache file.
+
+    Parameters
+    ----------
+    creds_cache
+        Path to the CLI's credential cache. Defaults to
+        ``$SOURCE_COOP_CREDS_CACHE`` or ``~/.cache/source-coop/credentials/_default.json``.
 
     Returns
     -------
@@ -27,18 +55,32 @@ def get_source_credentials(creds_cache: str = _DEFAULT_CREDS_CACHE):
         Keys: aws_access_key_id, aws_secret_access_key, aws_session_token,
         region_name, endpoint_url.
     expiration : datetime
-        Token expiration as a timezone-aware UTC datetime.
+        Token expiration as a timezone-aware UTC datetime. May be in the past —
+        a warning is printed, but it is the caller's decision what to do. Use
+        ``open_source_icechunk_repo`` if you want a clean stop instead.
     """
-    subprocess.run(
-        [SOURCE_COOP_CLI, "creds"],
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )
+    creds_cache = creds_cache or _DEFAULT_CREDS_CACHE
 
-    with Path(creds_cache).open() as f:
+    try:
+        subprocess.run([SOURCE_COOP_CLI, "creds"], check=True, stdout=subprocess.DEVNULL)
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"source-coop CLI not found at {SOURCE_COOP_CLI!r}. Install it, put it on "
+            f"$PATH, or set $SOURCE_COOP_CLI to its location."
+        ) from exc
+
+    path = Path(creds_cache)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"No Source Cooperative credential cache at {path}. {_LOGIN_HINT}"
+        )
+
+    with path.open() as f:
         cached = json.load(f)
 
     expiration = datetime.fromisoformat(cached["expiration"])
+    if expiration <= datetime.now(timezone.utc):
+        print(f"Warning: Source credentials expired at {expiration}. {_LOGIN_HINT}")
 
     source_creds = {
         "aws_access_key_id": cached["access_key_id"],
@@ -75,13 +117,17 @@ def open_source_icechunk_repo(
         Optional icechunk.RepositoryConfig (e.g. with VirtualChunkContainers).
     min_minutes_left
         If the token has fewer than this many minutes remaining and
-        check_expiration=True, returns (None, None, None, time_left).
+        check_expiration=True, returns (None, None, None, time_left) rather than
+        starting work that cannot finish. A full archive rebuild takes hours, so
+        the default of 15 minutes is a floor, not a recommendation.
     create_if_missing
-        Create the repository if it does not already exist.
+        Create the repository if it does not already exist. When False, a missing
+        repository raises rather than being created.
     verbose
         Print status messages.
     check_expiration
-        Raise a clean stop instead of a cryptic error when the token is expired.
+        Enforce min_minutes_left with a clean stop instead of a cryptic error
+        partway through a write.
 
     Returns
     -------
@@ -95,10 +141,11 @@ def open_source_icechunk_repo(
     now = datetime.now(timezone.utc)
     time_left = expiration - now
 
-    if check_expiration and time_left < timedelta(minutes=0):
+    if check_expiration and time_left < timedelta(minutes=min_minutes_left):
+        state = "expired" if time_left < timedelta(0) else f"expires in {time_left}"
         print(
-            f"Stopping cleanly. Source credentials expired. "
-            f"Run: {SOURCE_COOP_CLI} login --duration 1d --port 8400"
+            f"Stopping cleanly. Source credentials {state}, which leaves less than the "
+            f"{min_minutes_left} minutes required. {_LOGIN_HINT}"
         )
         return None, None, None, time_left
 
@@ -113,19 +160,21 @@ def open_source_icechunk_repo(
         session_token=source_creds["aws_session_token"],
     )
 
-    if create_if_missing:
-        try:
-            repo = icechunk.Repository.create(storage, config)
-            if verbose:
-                print("Created new Icechunk repo")
-        except Exception:
-            repo = icechunk.Repository.open(storage, config=config)
-            if verbose:
-                print("Opened existing Icechunk repo")
-    else:
+    # Ask whether the repo exists rather than calling create() and treating any
+    # failure as "it must already be there" — that hid credential, network and
+    # config errors behind an "Opened existing" message.
+    if icechunk.Repository.exists(storage):
         repo = icechunk.Repository.open(storage, config=config)
         if verbose:
             print("Opened existing Icechunk repo")
+    elif create_if_missing:
+        repo = icechunk.Repository.create(storage, config)
+        if verbose:
+            print("Created new Icechunk repo")
+    else:
+        raise icechunk.RepositoryNotFoundError(
+            f"No Icechunk repository at s3://{bucket}/{prefix} and create_if_missing=False"
+        )
 
     if verbose:
         print(f"Time remaining on token: {time_left}")
@@ -144,7 +193,8 @@ def wait_for_fresh_repo(
     Open the Icechunk repo, prompting for a token refresh if needed.
 
     Loops until the token has at least min_minutes_left remaining, or the
-    user chooses to stop. Useful before starting a long write loop.
+    user chooses to stop. Useful before starting a long write loop; needs an
+    interactive session, since it prompts with input().
 
     Returns
     -------
