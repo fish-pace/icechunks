@@ -22,7 +22,10 @@ Options when this next matters, in the order worth trying:
 
 1. Check whether the image has been bumped back to 3.12 — this is a managed image
    and the interpreter is not ours to choose. `python -V` settles it.
-2. Build in a 3.12 env of our own (venv/conda) rather than the kernel env.
+2. Build in a 3.12 env of our own rather than the kernel env. `/usr/bin/python3.12`
+   exists on this machine, so `python3.12 -m venv .venv && .venv/bin/pip install -r
+   requirements.txt` is the concrete route — untested so far, but it means "unrunnable"
+   is a statement about the *kernel* env, not about the machine.
 3. Pin to `icechunk>=1.1,<2` — **not** advisable. The notebooks use 2.x APIs, and
    the published repos were written by 2.x.
 

@@ -113,13 +113,15 @@ All three notebooks read the same source — NOAA CoastWatch OHC over HTTPS.
 | `ocean-heat-test-sc.ipynb` | Source Coop — minimal proof of concept | **no, git only** |
 | `ocean-heat-production-sc.ipynb` | Source Coop (`ocean-icechunks/noaa-ohc/{na,np,sp}`) | yes |
 
-`ocean-heat-test-sc.ipynb` is deliberately not published: its stored outputs are scratch
-state (non-monotonic execution counts, produced before the destination re-point), and it
-is still configured to write into the **production** prefix — `SC_PREFIX = 'noaa-ohc'`
-with `GROUP = 'test'` — so running it would drop a stray repo at the docs root. Give it
-its own prefix before running it. Its "delete everything" cell is also aimed at the whole
-`noaa-ohc/` prefix and is guarded only by a `%%script false` magic, unlike the production
-notebook's `RUN_CLEAR` flag.
+`ocean-heat-test-sc.ipynb` is not published: it needs Source Cooperative **write**
+credentials, so it is no use to a reader who just found the stores, and
+`ocean-heat-test-local.ipynb` demonstrates the same pattern with none.
+
+It writes to the scratch repository `ocean-icechunks/test-repo`, never to `noaa-ohc`. Its
+clear cell is guarded twice — a `RUN_CLEAR` flag (a variable, not a `%%script false` magic
+that one stray keystroke removes) and a `PROTECTED` set that refuses any prefix holding a
+published archive. It carries no saved outputs: it is a template of the steps, and stale
+outputs from a half-ordered run were what made the earlier copy misleading.
 
 ## Key gotchas
 
