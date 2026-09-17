@@ -86,7 +86,14 @@ datasets in it, so `publish_viewer.py` writes a product-specific replacement **i
 build output** at publish time (`write_catalog`, driven by the `catalog` key in `PRODUCTS`)
 — never into the gridlook checkout, which would bake one product's catalog into every other
 product's viewer and stamp the build `gridlook_dirty`. A catalog entry's `url` becomes the
-location hash verbatim, so it carries `varname` and the camera with it.
+location hash verbatim, so it carries the camera with it.
+
+**Link to the repository root, not to a group.** `.../noaa-ohc/na/` is the whole OHC link:
+gridlook resolves the group itself and offers `daily`/`14day_v1`/`14day` in a dropdown,
+with the variables of whichever is open. Naming a group and a `varname` in the URL only
+freezes two choices the viewer already presents, which is why there are three OHC links and
+not thirty-six. `variables` in `PRODUCTS` is therefore optional — gobai-o2 sets it because
+its README offers a link per variable; noaa-ohc does not.
 
 Camera state rides in the same fragment: `px`, `py`, `alt`, `lat`, `lon` and
 `dimIndices_<dim>` (see `STORE_PARAM_MAPPING` in `paramStore.ts`). The three OHC basins
