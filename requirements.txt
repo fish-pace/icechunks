@@ -47,9 +47,21 @@ h5netcdf>=1.8.1
 kerchunk>=0.2.9
 scipy>=1.17.0
 fsspec>=2026.2.0
+# kerchunk reads the source headers through fsspec's HTTPFileSystem, which is an
+# async filesystem: without aiohttp it raises 'HTTPFileSystem requires "requests"
+# and "aiohttp" to be installed' the first time a file is virtualized. Found by
+# installing this file into a clean Python 3.12 venv and running the test
+# notebook; the JupyterLab image ships aiohttp, so it never surfaced there.
+aiohttp>=3.13
 
 numpy>=2.3.5
 pandas>=2.3.3
+
+# The documented read path uses `xr.open_zarr(..., chunks={})`, which hands the
+# arrays to dask — without it that call raises "chunk manager 'dask' is not
+# available". Readers who only ever use chunks=None can skip it, but the README
+# recommends chunks={} for the full archive, so it belongs here.
+dask[array]>=2026.1
 
 # CoastWatch directory scrape. Its HTTPS endpoint 403s the default
 # python-requests User-Agent, so the notebooks send a browser-like one.
