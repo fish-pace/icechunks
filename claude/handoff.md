@@ -5,7 +5,7 @@ what is unfinished, not a task list.
 
 ## Where things stand (2026-09-17)
 
-Two datasets now live here. **GOBAI-O2 v2.3 monthly** (`gobai-o2-monthly/`) arrived on
+Three datasets now live here. **GOBAI-O2 v2.3 monthly** (`gobai-o2-monthly/`) arrived on
 2026-09-17 from `nmfs-opensci/gobai-rfrom-icechunks`, where it sat beside an unrelated
 product. Its store — `fish-pace/gobai-o2/monthly`, materialized, not virtual — was built
 2026-08-06 and is **done and static**: v2.3 is a finished archive version, so there is no
@@ -17,6 +17,15 @@ The CoastWatch OHC archive is **built and live** at `ocean-icechunks/noaa-ohc/{n
 on Source Cooperative — three repos (one per region grid), three groups each, covering
 2020-04-30 → 2026-08-26. Anonymous read works. Docs, `requirements.txt` and
 `icechunk_utils.py` are mirrored at `noaa-ohc/` and verified byte-identical to `main`.
+
+**OA indicators** (`oa-indicators/`) is the newest, built 2026-09-17 in PR #24 — a **virtual**
+store at `ocean-icechunks/oa-indicators/climatology`, snapshot `3VZQ6VDVY2644RZ9M0Z0`. NCEI
+accession 0270962 ships one NetCDF per indicator; twelve of them are merged into one flat group
+of 72 variables on `(depth 14, lat 76, lon 141)`. The whole store is **84 objects and 35 kB**
+referencing 82 MB that stays at NCEI. No time dimension — it is a climatology. Docs mirrored to
+the `oa-indicators/` root, gridlook viewer at `oa-indicators/viewer/`, and that viewer **does**
+draw in an ordinary browser, unlike CoastWatch's. Accession 0270962 is finished, so there is no
+update pipeline to write.
 
 **Before running anything:** the JupyterLab kernel env is Python 3.11 and `icechunk` 2.x
 is `requires_python = ">=3.12"`, so it cannot be installed there. A 3.12 venv does work —
@@ -37,7 +46,7 @@ recipe and its two traps are in [notes/environment.md](notes/environment.md).
 - **Nothing copies array bytes.** Every pipeline is virtual references into files that stay
   at the source, which is why a full three-region rebuild is hours, not days.
 
-## Recently shipped (2026-09-17, PRs #12–#19)
+## Recently shipped (2026-09-17, PRs #12–#19, #23–#25)
 
 A full repo audit and its fixes. Recorded the 2026-08-26 rebuild that had sat uncommitted;
 completed the docs mirror; added `requirements.txt`; trimmed CLAUDE.md to this repo and
@@ -93,7 +102,36 @@ Source Cooperative's static-hosting behaviour is in CLAUDE.md under "The browser
 the two that cost time were content types never being inferred, and the edge 403ing the
 default `Python-urllib` User-Agent, which reads exactly like a permissions failure.
 
-## Next task
+## OA indicators — what the build found
+
+Details are in CLAUDE.md under "Key gotchas (OA indicators…)"; the ones that cost time:
+
+- **`xr.merge` applies `combine_attrs` to *variable* attributes, not just the dataset's.** So
+  `combine_attrs="drop"` silently empties every variable's attrs. It looked like virtualizarr
+  losing metadata and was not. Use `"drop_conflicts"` and clear the per-file globals by hand.
+- **The source coordinates were unusable, not merely untidy.** Phony all-zero HDF5 dimension
+  scales `dep`/`lat`/`lon`, with the real values in separate variables. xarray reports
+  `Dimensions without coordinates`, so `sel(lat=...)` did not work on the source at all.
+  `swap_dims` fixes it as metadata, which is all a virtual store can do.
+- **CF compliance here was substantive.** `units` was `"N/A"` on every dimensionless field and
+  `"degrees Celsius"` on temperature; `standard_name` held free text. Real CF standard names
+  exist for only six of the twelve indicators — checked against the table, and **none invented**
+  for saturation states, the Revelle factor, hydrogen ion content or carbonate per unit mass.
+- **`vz.to_icechunk` defaults to `mode="w-"`**, so re-running a write raises `ContainsGroupError`
+  rather than being a no-op. The notebook now skips a populated store unless `OVERWRITE` is set.
+- **NCEI sends `Access-Control-Allow-Origin: *`** on ranged GETs where `coastwatch.noaa.gov`
+  sends none. That, and nothing else, is why this viewer draws and the OHC one does not. A
+  simple `Range: bytes=a-b` is CORS-safelisted, so no preflight is involved either.
+- **gridlook needs no time dimension** — every time path is gated on a dim literally named
+  `time`. It does need the spatial dims to be the trailing two, and `dimension_names` in the
+  Zarr metadata. It also ranks coordinate name `lat` above `latitude`, which is why the store
+  uses the short spelling.
+
+**Still unconfirmed:** whether the OA viewer actually *renders*. Transport is verified from here
+(content types, `application/wasm`, CORS on both hosts) but there is no browser on the hub. Ask
+Eli — that division is the norm.
+
+## Earlier next task, now done
 
 **Issue #20 — OA indicators** (<https://github.com/fish-pace/icechunks/issues/20>), when
 Eli says to start. Build a **virtual** Icechunk store, modelled on
@@ -125,6 +163,8 @@ Merging one variable per file into a single store is the part with no precedent 
 CoastWatch splits into groups because of codec differences, which is the opposite problem.
 Expect that to be where the design effort goes.
 
+*Delivered in PR #24. Kept above as the record of what was asked for.*
+
 ## Open threads
 
 - **Auto-update pipeline — undesigned, and the only substantial work left.** `write_group`
@@ -134,4 +174,12 @@ Expect that to be where the design effort goes.
 - **Cosmetic:** the production notebook's kernel metadata records Python 3.11.14 (from being
   opened, not run); the test notebooks say 3.12.12, which is the truthful one.
 - `ocean-icechunks/test-repo/noaa-ohc` holds 84 objects from verification runs. Deliberately
-  left in place as a worked example.
+  left in place as a worked example. `test-repo/oa-indicators` is the same thing for PR #24.
+- **The home quota is tight enough to break builds.** Writes to `~` started failing with
+  "No space left on device" twice on 2026-09-17 while `df` still reported 109 G free on the
+  export — it is a per-user block quota, not raw space. Clearing `~/.cache/pre-commit` (101 MB)
+  was enough to unblock it, which shows how little headroom there is. `~/.cache/claude` is
+  another 658 MB in four files if more is needed. The 404 G underneath has never been surveyed.
+- **This repo now has concurrent sessions.** On 2026-09-17 two ran at once and the shared
+  working tree had its branch switched mid-task. Use `git worktree add` for anything
+  substantial; PRs #23, #24 and #25 all overlapped and #24 had to be rebased twice.
