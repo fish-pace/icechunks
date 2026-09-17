@@ -26,7 +26,8 @@ Two things this avoids getting wrong:
 
 For the real read test — that virtual chunk references resolve back to CoastWatch —
 icechunk is genuinely needed, along with `authorize_virtual_chunk_access` at open
-time. The published repos have `save_config()` applied, so anonymous reopeners pick
+time; build the 3.12 venv in [environment.md](environment.md) when it is worth it. (It
+was: that is how the anonymous read path was confirmed on 2026-09-17.) The published repos have `save_config()` applied, so anonymous reopeners pick
 up the `VirtualChunkContainer` without passing config themselves.
 
 Related gotcha already in CLAUDE.md, worth not re-learning: a wrong anonymous read

@@ -28,13 +28,6 @@ Coverage as built (2020-04-30 → 2026-08-26), from the executed notebook's outp
 Corrupt source files are dropped by design (`open_region` counts them); the per-region counts
 differ because the bad files are in the source archive, not in our handling of it.
 
-**Docs mirror (done 2026-09-17):** all six files are now at `noaa-ohc/` — `README.md`,
-`requirements.txt`, `icechunk_utils.py` and the three notebooks — anonymous-readable with correct
-content types. Previously only `README.md` and the production notebook had ever been uploaded, so
-the other three 404ed while the README claimed they were "included here". The mirror cell's
-`files_to_upload` now lists all six, and the published production notebook is the executed copy
-(~1.2 MB) rather than the stripped one.
-
 **Next tasks (design open):**
 1. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.**
    `write_group` is already idempotent/append-friendly (skips groups that exist), but it does not
@@ -66,8 +59,8 @@ Do not use conda; the env will not solve. Two constraints that bite:
 - **Python >= 3.12 is required.** Every `icechunk` 2.x release is published
   `requires_python = ">=3.12"`. The JupyterLab image is currently Python 3.11.14, where
   `pip install "icechunk>=2.1"` finds no matching distribution at all (pip sees only the 1.1.x
-  line). The 2026-08-26 production run was on 3.12. See `claude/notes/environment.md` before
-  trying to work around it.
+  line). A 3.12 venv built from `/srv/conda/bin/python3.12` does work and has been used to run
+  the notebooks — recipe and traps in `claude/notes/environment.md`.
 - **The NetCDF-3 groups need `kerchunk` and `scipy`**, which the notebooks' own inline pip lines
   omit — `NetCDF3Parser` calls `kerchunk.netCDF3.NetCDF3ToZarr`, which subclasses scipy's
   `netcdf_file`. They are satisfied in the image by luck, not by declaration.
@@ -102,7 +95,10 @@ The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.i
   `icechunk_utils` finds it via `$SOURCE_COOP_CLI`, then `$PATH`, then `~/.cargo/bin`. The
   login flow is served on the given port — reach it through the hub proxy at
   `<hub-url>/user/<username>/proxy/8400/`.
-  A full rebuild takes about 2.5 hours, so ask for a duration well beyond that. Note that `open_source_icechunk_repo` stops cleanly only when the token is **already** expired — its `min_minutes_left` argument is currently accepted and ignored, so it will happily start a two-hour write on a token with ten minutes left. `wait_for_fresh_repo` does implement the check.
+  A full rebuild takes about 2.5 hours, so ask for a duration well beyond that.
+  `open_source_icechunk_repo` enforces `min_minutes_left` (default 15) and stops cleanly
+  rather than starting a write that cannot finish; `wait_for_fresh_repo` additionally
+  prompts for a refresh, but needs an interactive session.
 - Public Icechunk repos on Source Coop can be read anonymously via `icechunk.http_storage(url)`.
 - NOAA S3 sources use `skip_signature=True` / `anonymous=True`.
 - CoastWatch HTTPS requires a browser-like User-Agent header; the default `python-requests` UA returns 403.
@@ -117,17 +113,13 @@ All three notebooks read the same source — NOAA CoastWatch OHC over HTTPS.
 | `ocean-heat-test-sc.ipynb` | Source Coop — minimal proof of concept | **no, git only** |
 | `ocean-heat-production-sc.ipynb` | Source Coop (`ocean-icechunks/noaa-ohc/{na,np,sp}`) | yes |
 
-`ocean-heat-test-sc.ipynb` is not published: it needs Source Cooperative **write**
-credentials, so it is no use to a reader who just found the stores, and
-`ocean-heat-test-local.ipynb` demonstrates the same pattern with none.
-
-It writes to `ocean-icechunks/test-repo/noaa-ohc` — inside the scratch Source Cooperative
-repository <https://source.coop/ocean-icechunks/test-repo> — never to the published
-`ocean-icechunks/noaa-ohc`. Its
-clear cell is guarded twice — a `RUN_CLEAR` flag (a variable, not a `%%script false` magic
-that one stray keystroke removes) and a `PROTECTED` set that refuses any prefix holding a
-published archive. It carries no saved outputs: it is a template of the steps, and stale
-outputs from a half-ordered run were what made the earlier copy misleading.
+`ocean-heat-test-sc.ipynb` stays in git only: it needs write credentials, so it is no use
+to a reader who just found the stores, and `ocean-heat-test-local.ipynb` shows the same
+steps with none. It writes to `ocean-icechunks/test-repo/noaa-ohc` (the scratch repo at
+<https://source.coop/ocean-icechunks/test-repo>), never to the published prefix, and its
+clear cell is guarded by both a `RUN_CLEAR` flag and a `PROTECTED` set that refuses any
+prefix holding a published archive. It carries no saved outputs by design — it is a
+template of the steps.
 
 ## Key gotchas
 
