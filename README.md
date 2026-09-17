@@ -81,14 +81,14 @@ they are read-along references rather than something to execute.
 
 ## Reuse and citation
 
-This work is released under [Apache License 2.0](LICENSE). You are free to use, copy,
-modify, and redistribute it, including commercially. If you use it in published work, in a
-presentation, or in another repository, please give attribution:
+**Code.** Released under [Apache License 2.0](LICENSE). Use it, copy it, adapt it, and
+redistribute it, commercially or not — you do not need to credit us, cite us, or ask
+permission. (Apache-2.0 asks that you keep the license and copyright notice with copies you
+redistribute; we ask for nothing beyond that.)
 
-> Holmes, E.E. (2026). *icechunks — virtual Icechunk stores for NOAA satellite data*.
-> fish-pace/icechunks. https://github.com/fish-pace/icechunks
-
-The **data** in the published stores is not ours: the Satellite Ocean Heat Content Suite is
-produced by USDOC/NOAA/NESDIS/OSPO with the University of Miami / Rosenstiel School. Cite
-the product itself when you use the data — see
-[`coastwatch-heat-content/README.md`](coastwatch-heat-content/README.md#credits).
+**Data.** None of the data is ours. These stores contain no science arrays at all — only
+references to files hosted by NOAA CoastWatch. The Satellite Ocean Heat Content Suite is
+produced by USDOC/NOAA/NESDIS/OSPO with the University of Miami / Rosenstiel School. For
+data use and citation, follow the source: the
+[product page](http://www.ospo.noaa.gov/Products/ocean/ocean_heat.html), and the
+[Credits](coastwatch-heat-content/README.md#credits) section of the data documentation.
