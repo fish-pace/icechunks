@@ -46,7 +46,7 @@ recipe and its two traps are in [notes/environment.md](notes/environment.md).
 - **Nothing copies array bytes.** Every pipeline is virtual references into files that stay
   at the source, which is why a full three-region rebuild is hours, not days.
 
-## Recently shipped (2026-09-17, PRs #12–#19, #23–#25)
+## Recently shipped (2026-09-17, PRs #12–#19, #23–#26)
 
 A full repo audit and its fixes. Recorded the 2026-08-26 rebuild that had sat uncommitted;
 completed the docs mirror; added `requirements.txt`; trimmed CLAUDE.md to this repo and
@@ -101,6 +101,41 @@ places out of three.
 Source Cooperative's static-hosting behaviour is in CLAUDE.md under "The browser viewer";
 the two that cost time were content types never being inferred, and the edge 403ing the
 default `Python-urllib` User-Agent, which reads exactly like a permissions failure.
+
+## The CoastWatch OHC viewer (2026-09-17) — live, and CORS-blocked by design of the source
+
+Published at `ocean-icechunks/noaa-ohc/viewer/` (102 files, 22.4 MB, gridlook `2649e66`).
+Three links, one per region, in the README's viewer section:
+
+```
+…/noaa-ohc/viewer/index.html#icechunk+…/noaa-ohc/na/::px=0::py=0::alt=95910936::lat=25.0562::lon=-47.2424::dimIndices_time=0
+```
+
+Four things worth not rediscovering:
+
+- **Groups were never the blocker.** CLAUDE.md used to say an OHC viewer link needed more
+  than a store URL and a variable name because the data is in groups. Wrong: gridlook's
+  `splitIcechunkStoreAndGroup` walks a URL back segment by segment until one opens as a
+  repository root. **Link the repository root and stop there** — `…/noaa-ohc/na/` — and the
+  viewer offers `daily`/`14day_v1`/`14day` and their variables as dropdowns. Naming a group
+  or a `varname` just freezes a choice the viewer already presents.
+- **CORS is the blocker, and it is not fixable from here.** A virtual store needs CORS on
+  two hosts. `coastwatch.noaa.gov` serves ranged GETs but sends no
+  `Access-Control-Allow-Origin`, on the GET or the preflight, so the browser loads metadata
+  and coordinates — real chunks in the repo — and blocks every science array. Enforcement is
+  in the browser, so no published code can waive it. Published anyway at Eli's call: it
+  renders for anyone running a CORS-disabling extension, and is in place for the day
+  CoastWatch sends the header (one Apache directive; no rebuild, the manifests do not
+  change). This is exactly the contrast with the OA viewer, where NCEI *does* send it.
+- **The dataset picker reads `static/catalog-extended.json`, not `static/catalog.json`.**
+  `HashGlobeView.vue` sets `DEFAULT_CATALOG` to the extended file. `publish_viewer.py`
+  writes a product-specific catalog **into the build output** (`write_catalog`), never into
+  the gridlook checkout — doing the latter would bake one product's catalog into every other
+  product's viewer and stamp the build `gridlook_dirty`, matching no commit.
+- **Camera state rides in the fragment** (`px`, `py`, `alt`, `lat`, `lon`,
+  `dimIndices_<dim>`). The three basins need different centres; `_OHC_BASINS` holds them.
+  Dragging the globe rewrites the address bar, so a good opening view is obtained by
+  positioning and copying, not by computing.
 
 ## OA indicators — what the build found
 
@@ -163,7 +198,9 @@ Merging one variable per file into a single store is the part with no precedent 
 CoastWatch splits into groups because of codec differences, which is the opposite problem.
 Expect that to be where the design effort goes.
 
-*Delivered in PR #24. Kept above as the record of what was asked for.*
+*Delivered in PR #24. Kept above as the record of what was asked for — note that its
+third bullet is now known to be wrong: groups need nothing special from a viewer link.
+See "The CoastWatch OHC viewer" above.*
 
 ## Open threads
 
@@ -171,6 +208,13 @@ Expect that to be where the design effort goes.
   skips groups that already exist but nothing appends *new time steps* to an existing group.
   Until that path and a trigger exist, the stores stay frozen at the last manual run and
   drift behind CoastWatch — three weeks and counting as of this writing.
+- **The `np` and `sp` viewer links share `na`'s `alt`** (`95910936`), which frames a basin
+  100° wide in longitude; `np` spans 180° and `sp` 160°, so both may open too tight. Camera
+  geometry cannot be checked from the hub. The fix is two numbers: drag each globe to a good
+  view, copy the URL, and update `_OHC_BASINS` in `publish_viewer.py`.
+- **Whether the OHC viewer renders with a CORS extension is unconfirmed** — transport is
+  verified from here (102 objects 200 with correct types, `application/wasm`, store reads 206
+  with `access-control-allow-origin: *`), the rendering is not. Same gap as the OA viewer.
 - **Cosmetic:** the production notebook's kernel metadata records Python 3.11.14 (from being
   opened, not run); the test notebooks say 3.12.12, which is the truthful one.
 - `ocean-icechunks/test-repo/noaa-ohc` holds 84 objects from verification runs. Deliberately
