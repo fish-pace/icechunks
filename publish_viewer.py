@@ -173,6 +173,39 @@ PRODUCTS = {
             "title": "NOAA CoastWatch Ocean Heat Content",
         },
     },
+    # A climatology: no time dimension at all, and gridlook handles that. Every
+    # time-specific path in it is gated on a dimension literally named `time`
+    # and falls through to a no-op, so `(depth, lat, lon)` renders as a regular
+    # grid with a generic `depth` slider. The store's coordinates are named
+    # `lat`/`lon` rather than `latitude`/`longitude` partly for this reason --
+    # gridlook ranks the short spelling first.
+    "oa-indicators": {
+        "bucket": "ocean-icechunks",
+        "viewer_prefix": "oa-indicators/viewer",
+        "stores": {
+            "": {
+                "url": f"{PUBLIC}/ocean-icechunks/oa-indicators/climatology",
+                "title": "OA indicators - North American margins climatology",
+                # One store, so one opening view. The grid spans lat 10.5..85.5
+                # and lon -179.5..-39.5; this centres on the middle of that box,
+                # which frames both the Pacific and Atlantic margins at once.
+                # `dimIndices_depth=0` opens at the surface. There is no
+                # `dimIndices_time`: this is a climatology with no time axis.
+                "view": "px=0::py=0::alt=95910936::lat=48::lon=-110::dimIndices_depth=0",
+            },
+        },
+        # The _an (objectively analysed mean) fields, which is what NCEI
+        # recommends using. The viewer's own dropdown reaches all 72.
+        "variables": ("OmegaA_an", "pHT_an", "DIC_an", "TA_an", "fCO2_an", "RF_an"),
+        # Without this the published viewer offers gridlook's 70 demo datasets.
+        # One store here, so the catalog is a single entry -- the point is to
+        # replace the noise, not to enumerate the 72 variables, which the
+        # viewer's own picker already reaches.
+        "catalog": {
+            "path": "static/catalog-extended.json",
+            "title": "NOAA OA indicators - North American margins",
+        },
+    },
 }
 DEFAULT_DIST = Path("/tmp/gridlook-dist")
 
