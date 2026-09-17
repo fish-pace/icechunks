@@ -6,15 +6,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A collection of Jupyter notebooks that demonstrate the pattern: **source NetCDF files → VirtualiZarr (virtual references) → Icechunk repository**. The large science arrays are never copied; Icechunk stores metadata and byte-range references back to the originals.
 
-## Status & roadmap (last updated 2026-08-26)
+## Status & roadmap (last updated 2026-09-17)
 
-**Done:** The CoastWatch OHC archive was first built and verified as three separate Icechunk repos on Source Cooperative under `fish-pace/coastwatch/ocean-heat/{na,np,sp}`, each with three groups (`daily`, `14day_v1`, `14day`). Docs and notebooks are mirrored at the destination root (see below) and everything is committed to `main` (via PRs #3–#6). The GitHub repo is `https://github.com/fish-pace/icechunks`.
+**Done:** The CoastWatch OHC archive is built and verified as three separate Icechunk repos on
+Source Cooperative at `ocean-icechunks/noaa-ohc/{na,np,sp}`, each with three groups (`daily`,
+`14day_v1`, `14day`). It was first built under `fish-pace/coastwatch/ocean-heat/{na,np,sp}`
+(PRs #3–#6); the destination re-point landed in PR #8, and the **rebuild at the new location
+ran successfully on 2026-08-26** — write credentials re-pointed, `ocean-heat-production-sc.ipynb`
+executed end to end, all nine groups committed, and the boundary / variable-set / codec-homogeneity
+assertions passed. Anonymous read at `https://data.source.coop/ocean-icechunks/noaa-ohc/{na,np,sp}`
+is live. The GitHub repo is `https://github.com/fish-pace/icechunks`.
 
-**In progress:** Re-pointing the destination to bucket `ocean-icechunks`, prefix `noaa-ohc` (repos at `ocean-icechunks/noaa-ohc/{na,np,sp}`). All source references (notebooks, README, CLAUDE.md, `icechunk_utils.py`) are updated; still to do: re-point write credentials for the new org and re-run `ocean-heat-production-sc.ipynb` to actually build the repos at the new location.
+Coverage as built (2020-04-30 → 2026-08-26), from the executed notebook's outputs:
 
-**Next tasks (not yet started, design open):**
-1. **Finish the org rebuild.** Source references are already swept to `ocean-icechunks/noaa-ohc`. Remaining: re-point write credentials and re-run `ocean-heat-production-sc.ipynb` against the new destination. The build logic itself is org-agnostic — `open_region`/`region_prefix`/`write_region` all derive from `SC_BUCKET`/`SC_PREFIX_BASE`.
-2. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.** `write_group` is already idempotent/append-friendly (skips groups that exist), but it does not yet append *new time steps* to an existing group — that appending path, plus scheduling/triggering when new source files appear, still needs to be figured out.
+| Region | `daily` | `14day_v1` | `14day` | Corrupt files dropped |
+|---|---|---|---|---|
+| na | 1357 | 430 | 507 | 6 (`14day`) |
+| np | 1356 | 390 | 513 | 1 (`daily`), 21 (`14day_v1`) |
+| sp | 1349 | 411 | 513 | none |
+
+Corrupt source files are dropped by design (`open_region` counts them); the per-region counts
+differ because the bad files are in the source archive, not in our handling of it.
+
+**Next tasks (design open):**
+1. **Finish the docs mirror at the destination root.** Only `README.md` and
+   `ocean-heat-production-sc.ipynb` are actually at `noaa-ohc/`; the inventory below also promises
+   `icechunk_utils.py`, `ocean-heat-test-sc.ipynb` and `ocean-heat-test-local.ipynb`, which 404.
+   The mirror cell's `files_to_upload` lists only the two. The mirrored production notebook is also
+   the pre-run copy (~284 KB) rather than the executed one — decide whether the published copy
+   should carry outputs, then sync.
+2. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.**
+   `write_group` is already idempotent/append-friendly (skips groups that exist), but it does not
+   yet append *new time steps* to an existing group — that appending path, plus scheduling/triggering
+   when new source files appear, still needs to be figured out. Until it exists the repos stay frozen
+   at the last manual run, so they drift behind the source archive by however long since.
+
+## Required packages
+
+The following will need to be run if icechunk is not installed. Do not use conda as the env will not solve.
+```
+pip install -q "icechunk>=2.1" "virtualizarr>=2.4" 
+```
 
 ## Running notebooks
 
