@@ -3,11 +3,11 @@
 #
 #     pip install -r requirements.txt
 #
-# Separate from the repository-root requirements.txt on purpose: that file is for the
+# Separate from coastwatch-heat-content/requirements.txt on purpose: that file is for the
 # CoastWatch *virtual* pipeline and carries virtualizarr, kerchunk, obstore and friends,
 # none of which this notebook uses. This one writes real Zarr chunks with plain Xarray.
 #
-# Lower bounds only, no lock file — the same convention as the root file. The bounds are
+# Lower bounds only, no lock file — the same convention as the CoastWatch file. The bounds are
 # the versions in a clean Python 3.12 venv on 2026-09-17, in which the notebook was run
 # end to end with RUN_WRITE=False (source streamed from NCEI, published store validated).
 # The versions behind the original 2026-08-06 build were not recorded beyond

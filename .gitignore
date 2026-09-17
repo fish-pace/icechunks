@@ -4,6 +4,10 @@ __pycache__/
 *.egg-info/
 .ipynb_checkpoints/
 
+# Local Icechunk repository written by ocean-heat-test-local.ipynb. Metadata and
+# virtual references only -- a few hundred KB -- but it is build output, not source.
+coastwatch-ohc-http-icechunk-demo/
+
 # Jupyter scratch notebooks
 Untitled*.ipynb
 Untitled*

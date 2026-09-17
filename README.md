@@ -27,11 +27,18 @@ Public, anonymously readable, no account needed:
 | CoastWatch OHC — South Pacific | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` | virtual |
 | GOBAI-O2 v2.3 monthly, 2004–2024 | `https://data.source.coop/fish-pace/gobai-o2/monthly` | materialized |
 
-GOBAI-O2 also has a **browser viewer** — no install, no account:
-[open `oxy` on the globe](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy). It is
-[gridlook](https://github.com/eeholmes/gridlook), published beside the data by
-`publish_viewer.py`; the store to open lives in the URL fragment, so one build serves any
-store.
+Both have a **browser viewer** — [gridlook](https://github.com/eeholmes/gridlook),
+published beside the data by `publish_viewer.py`. The store to open lives in the URL
+fragment, so one build serves any store, and a group is just the last path segment:
+
+- **GOBAI-O2** — [open `oxy` on the globe](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy).
+  No install, no account, nothing to configure.
+- **CoastWatch OHC** — [open `ohc` for the North Atlantic](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day::varname=ohc),
+  **but the data will not draw in an ordinary browser**. These stores are virtual, so the
+  science arrays come from `coastwatch.noaa.gov`, which sends no CORS headers and is
+  therefore blocked by the browser. It renders with a CORS-disabling browser extension;
+  see [the viewer section of its README](coastwatch-heat-content/README.md#view-it-in-a-browser).
+  Nothing on our side can fix this — only CoastWatch serving the header would.
 
 Each CoastWatch region is a separate repository — the three use different lat/lon grids
 and cannot share a virtual array. Each holds three groups (`daily`, `14day_v1`, `14day`)
@@ -77,13 +84,13 @@ coastwatch-heat-content/
   ocean-heat-test-local.ipynb      minimal proof of concept, writes locally, no credentials
   ocean-heat-test-sc.ipynb         minimal proof of concept, writes to Source Cooperative
   ocean-heat-production-sc.ipynb   the full pipeline that built all three region stores
+  requirements.txt                 dependency floors for those notebooks
 gobai-o2-monthly/
   README.md                        data documentation, mirrored to the store
   gobai-o2-monthly-icechunk-sc.ipynb   the pipeline that built the GOBAI-O2 store
   requirements.txt                 dependency floors for that notebook
 icechunk_utils.py                  Source Cooperative credential and repo helpers
 publish_viewer.py                  builds gridlook and publishes it beside a store
-requirements.txt                   dependency floors for the CoastWatch notebooks
 claude/                            working notes for AI coding agents
 ```
 
@@ -94,8 +101,8 @@ CoastWatch notebooks pull in VirtualiZarr, kerchunk and obstore, and the GOBAI-O
 notebook needs none of them:
 
 ```bash
-pip install -r requirements.txt                    # CoastWatch (virtual)
-pip install -r gobai-o2-monthly/requirements.txt   # GOBAI-O2 monthly (materialized)
+pip install -r coastwatch-heat-content/requirements.txt   # CoastWatch (virtual)
+pip install -r gobai-o2-monthly/requirements.txt          # GOBAI-O2 monthly (materialized)
 ```
 
 **Python 3.12 or newer is required** — every `icechunk` 2.x release is published

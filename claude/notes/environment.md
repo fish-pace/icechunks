@@ -23,12 +23,28 @@ what is needed and silently wrong about whether it will work here.
 
 ```bash
 /srv/conda/bin/python3.12 -m venv /path/to/venv      # NOT /usr/bin/python3.12
-/path/to/venv/bin/pip install -r requirements.txt nbconvert ipykernel
+/path/to/venv/bin/pip install --no-cache-dir -r coastwatch-heat-content/requirements.txt \
+    nbconvert ipykernel
 /path/to/venv/bin/python -m ipykernel install --prefix=/path/to/venv --name venv312
 JUPYTER_PATH=/path/to/venv/share/jupyter /path/to/venv/bin/jupyter nbconvert \
     --to notebook --execute --ExecutePreprocessor.kernel_name=venv312 \
     --output /somewhere/out.ipynb coastwatch-heat-content/ocean-heat-test-sc.ipynb
 ```
+
+Use `--no-cache-dir`, or clean up after. **pip's wheel cache is what fills the home
+quota**, and on this hub that failure is disguised: every write to `/home/jovyan` starts
+returning `No space left on device` — `git checkout` cannot create `.git/index.lock`, a
+one-byte `echo x > file` fails — while `df` cheerfully reports 109 GB free and 3 % of
+inodes used. `df` shows the *export's* totals (`10.100.33.250:/prod/eeholmes`), not the
+per-user quota, so a full quota and a healthy disk look identical to it. Building the venv
+above pulled ~370 MB of wheels into `~/.cache/pip` and tipped the quota over mid-session
+on 2026-09-17; `rm -rf ~/.cache/pip` restored writes immediately.
+
+So either install with `--no-cache-dir`, or run `pip cache purge` (or `rm -rf
+~/.cache/pip`) as soon as the venv is built. Do not go looking for a full disk: if writes
+to home fail while `df` shows free space, it is the quota, and the cache is the first
+place to look. `~/.cache` also accumulates `pre-commit` (~100 MB) and `uv`/`virtualenv`
+trees worth clearing.
 
 Two traps in that recipe:
 

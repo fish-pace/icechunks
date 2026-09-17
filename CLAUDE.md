@@ -60,8 +60,24 @@ the URL **fragment** (`…/viewer/index.html#icechunk+<store url>::varname=oxy`)
 host never sees, so one build serves any store and the viewer holds no data of its own.
 A sibling script does the same for NODD buckets in `nmfs-opensci/gobai-rfrom-icechunks`.
 
-The CoastWatch OHC stores have no viewer entry: their data is in groups (`daily`,
-`14day_v1`, `14day`), so a link needs more than a store URL and a variable name.
+Both products have a viewer. The CoastWatch one is at `ocean-icechunks/noaa-ohc/viewer/`
+(published 2026-09-17, 102 files, 22.5 MB) and **groups are not a problem** — an earlier
+note here claimed they were. gridlook's `splitIcechunkStoreAndGroup` walks a store URL back
+segment by segment until one opens as a repository root, so
+`.../noaa-ohc/na/14day::varname=ohc` resolves to store `.../na` plus group `14day`.
+
+**What does break the CoastWatch viewer is CORS, and nothing on our side can fix it.** A
+virtual store needs CORS on *two* hosts, because metadata and data come from different
+places. Source Cooperative is wide open; `coastwatch.noaa.gov` (checked 2026-09-17) serves
+ranged GETs (206, `Accept-Ranges: bytes`) but sends **no** `Access-Control-Allow-Origin`,
+and no CORS headers on the OPTIONS preflight either. So the viewer loads, lists variables
+and draws the coordinates — those are real chunks in the Icechunk repo — and the browser
+blocks every science array. CORS is enforced by the browser, not the page, so no published
+code can waive it; `mode: "no-cors"` returns an opaque response the page may not read.
+The real fixes are CoastWatch sending the header (one Apache directive, no rebuild needed)
+or proxying the source and rebuilding every store against the proxy prefix. It is
+published anyway because it renders for anyone running a CORS-disabling browser
+extension, and it is then in place for the day the header appears.
 
 What Source Cooperative does and does not do for a static site (checked 2026-09-17):
 
@@ -96,8 +112,8 @@ mirrored to their destination roots, so a reader who finds the stores on Source 
 pins with them.
 
 ```
-pip install -r requirements.txt                    # CoastWatch (virtual)
-pip install -r gobai-o2-monthly/requirements.txt   # GOBAI-O2 monthly (materialized)
+pip install -r coastwatch-heat-content/requirements.txt   # CoastWatch (virtual)
+pip install -r gobai-o2-monthly/requirements.txt          # GOBAI-O2 monthly (materialized)
 ```
 
 They are deliberately separate: the GOBAI-O2 notebook uses no virtualizarr, kerchunk, obstore or
@@ -117,7 +133,8 @@ Do not use conda; the env will not solve. Two constraints that bite:
 
 ## Running notebooks
 
-Notebooks run in JupyterLab. Install with `pip install -r requirements.txt` (see above); each
+Notebooks run in JupyterLab. Install with
+`pip install -r coastwatch-heat-content/requirements.txt` (see above); each
 notebook also carries a commented pip line of its own, kept so a notebook downloaded standalone
 from Source Cooperative is self-describing — those lines predate `requirements.txt` and omit
 `kerchunk`/`scipy`.
@@ -177,7 +194,15 @@ steps with none. It writes to `ocean-icechunks/test-repo/noaa-ohc` (the scratch 
 <https://source.coop/ocean-icechunks/test-repo>), never to the published prefix, and its
 clear cell is guarded by both a `RUN_CLEAR` flag and a `PROTECTED` set that refuses any
 prefix holding a published archive. It carries no saved outputs by design — it is a
-template of the steps.
+template of the steps. Last run end to end on 2026-09-17 (five files, five commits, reopened
+and read back) in a clean 3.12 venv.
+
+`ocean-heat-test-local.ipynb`, by contrast, **does** carry its outputs: it needs no
+credentials and writes only to a local directory, so its committed run is the cheapest proof
+that the whole virtual pattern works. Re-executed 2026-09-17 in the same clean venv — three
+2026 files virtualized and appended in about 1 s each, then `ohc` read back through its
+virtual references. The local repo it writes (`coastwatch-ohc-http-icechunk-demo/`) is
+gitignored.
 
 ## Key gotchas (GOBAI-O2 / materialized)
 
@@ -206,6 +231,14 @@ template of the steps.
 - **Scalar vs. slice indexing on virtual arrays**: prefer `isel(time=slice(0,1), z_l=slice(0,1)).squeeze(drop=True)` over `isel(time=0, z_l=0)` to avoid loading unexpectedly large chunks.
 - **Transient CoastWatch read failures are not corruption.** A virtual-chunk read can fail with `StorageError: error fetching virtual reference ... connection closed before message completed`; the same read succeeds on retry with nothing changed (verified 5/5 after one such failure). CoastWatch HTTPS is slow and drops connections. `scrape_nc_urls` retries with backoff on the write side; chunk reads have no retry, so a reader just sees the drop.
 - **Writable sessions are single-use**: after `session.commit()`, call `repo.writable_session("main")` again before writing more data.
+- **A second run into an existing repo needs `mode="w"`.** `vds.vz.to_icechunk(store, group=G)`
+  raises `zarr.errors.ContainsGroupError: A group exists in store ... at path 'G'` when the
+  group is already there, so a demo notebook that worked once fails the next time against the
+  same scratch repo. `to_icechunk(..., group=G, mode="w")` replaces it. Found 2026-09-17 by
+  re-running `ocean-heat-test-sc.ipynb` against `test-repo/noaa-ohc`, which still held the
+  group from an earlier verification run; the notebook now passes `mode="w"` on the first
+  file. `write_group` in the production notebook sidesteps this by skipping groups that
+  already exist, which is why the production path never hit it.
 - **Variables with different file layouts cannot be merged virtually** — they need separate groups. Here that is why `daily`/`14day_v1`/`14day` are three groups rather than one array.
 - **Coordinate repair before writing.** Some CoastWatch files carry all-zero lat/lon grids. `build_grid_template` probes the first files for a valid grid and `make_repair` substitutes it as a `preprocess` hook on `open_virtual_mfdataset`; files that still fail to open are dropped and counted. The same hook strips NaN attributes, which Zarr metadata (JSON) cannot represent.
 
@@ -233,6 +266,13 @@ config.manifest.max_concurrent_manifest_fetches_during_commit = 16
 | CoastWatch OHC — South Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` |
 | GOBAI-O2 v2.3 monthly (2004–2024), materialized | `https://data.source.coop/fish-pace/gobai-o2/monthly` |
 
+Browser viewers (gridlook, published by `publish_viewer.py`):
+
+| Viewer | URL | Renders? |
+|---|---|---|
+| CoastWatch OHC | `https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html` | metadata only — needs a CORS-disabling extension for the data (see above) |
+| GOBAI-O2 | `https://data.source.coop/fish-pace/gobai-o2/viewer/index.html` | yes, unaided |
+
 Each CoastWatch OHC region is a **separate repo** (different lat/lon grids). Every region repo has three groups: `daily` (original `{region}` product, NetCDF-3), `14day_v1` (`{region}14` NetCDF-3 big-endian), `14day` (`{region}14` HDF5 little-endian). The `14day_v1`/`14day` split is at 2025 day 084/085; the `daily`/`14day` split is a variable-set/product-generation difference.
 
-The `noaa-ohc/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `requirements.txt`, `icechunk_utils.py`, `ocean-heat-production-sc.ipynb` and `ocean-heat-test-local.ipynb` — five files, **not** `ocean-heat-test-sc.ipynb` (see the inventory above). These are reference/reproducibility copies; keep them in sync when the git versions change. The last cell of `ocean-heat-production-sc.ipynb` uploads the set; `requirements.txt` and `icechunk_utils.py` come from the repo root via `../`, flattened onto the destination root by `path.name`.
+The `noaa-ohc/` **root** (alongside the `na/`/`np/`/`sp/` repo subfolders) also holds the human-facing docs, mirrored from git: `README.md`, `requirements.txt`, `icechunk_utils.py`, `ocean-heat-production-sc.ipynb` and `ocean-heat-test-local.ipynb` — five files, **not** `ocean-heat-test-sc.ipynb` (see the inventory above). These are reference/reproducibility copies; keep them in sync when the git versions change. The last cell of `ocean-heat-production-sc.ipynb` uploads the set; `icechunk_utils.py` comes from the repo root via `../`, flattened onto the destination root by `path.name`, while `requirements.txt` now sits beside the notebooks. The `viewer/` prefix alongside them is the gridlook build, published by `publish_viewer.py`, and is not part of the notebook's mirror set.
