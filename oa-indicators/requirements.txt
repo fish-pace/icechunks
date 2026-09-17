@@ -1,0 +1,48 @@
+# Dependencies for the OA-indicators virtual-Icechunk notebook in
+# oa-indicators/ (see also the repository CLAUDE.md, "Required packages").
+#
+#     pip install -r requirements.txt
+#
+# Lower bounds only, no lock file — the same policy as the rest of this
+# repository. Nothing here copies array bytes: the store is virtual references
+# into the twelve NetCDF-4 files that stay at NCEI, so the install is small.
+#
+# REQUIRES PYTHON >= 3.12. Every icechunk 2.x release is published
+# `requires_python = ">=3.12"`, so on an older interpreter
+# `pip install "icechunk>=2.1"` resolves to nothing at all. Check `python -V`
+# first; the JupyterLab image is currently 3.11 and cannot run this notebook.
+#
+# Lower bounds are the versions this notebook was last run against, in a clean
+# Python 3.12 venv on 2026-09-17.
+
+icechunk>=2.2
+virtualizarr>=2.7
+zarr>=3.4
+xarray>=2026.7
+
+# Byte-range reads against the NCEI HTTPS source. obspec-utils provides the
+# ObjectStoreRegistry the parser takes; it imports as `obspec_utils`.
+obstore>=0.11
+obspec-utils>=0.9
+
+# The source files are NetCDF-4/HDF5, so only virtualizarr's HDFParser is used.
+# It soft-imports h5py. Unlike the CoastWatch notebooks there is no NetCDF-3
+# path here, so kerchunk and scipy are NOT needed. h5netcdf is the xarray
+# backend that loads the coordinate variables named in `loadable_variables`.
+h5py>=3.16
+h5netcdf>=1.8
+
+# fsspec + aiohttp back the h5netcdf reads of the coordinate variables and the
+# source-comparison cell. requests alone is not enough: HTTPFileSystem is async.
+fsspec>=2026.2
+aiohttp>=3.13
+
+numpy>=2.3
+
+# The documented read path uses `xr.open_zarr(..., chunks={})`, which hands the
+# arrays to dask — without it that call raises "chunk manager 'dask' is not
+# available".
+dask[array]>=2026.1
+
+boto3>=1.42        # mirrors the docs to the store's prefix on Source Cooperative
+matplotlib>=3.10   # the verification map at the end of the notebook
