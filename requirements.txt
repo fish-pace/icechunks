@@ -1,0 +1,59 @@
+# Dependencies for the CoastWatch OHC virtual-Icechunk notebooks in
+# coastwatch-heat-content/ (see also CLAUDE.md, "Required packages").
+#
+#     pip install -r requirements.txt
+#
+# Lower bounds only, and deliberately no lock file: these notebooks run in
+# JupyterLab on a managed image whose stack moves on its own, so exact pins
+# would fight the image rather than protect the build. Nothing here copies
+# array bytes — the whole pipeline is virtual references — so the install is
+# small and a newer stack is expected to be fine.
+#
+# REQUIRES PYTHON >= 3.12. Every icechunk 2.x release is published as
+# `requires_python = ">=3.12"`, so on an older interpreter
+# `pip install "icechunk>=2.1"` resolves to nothing at all. The 2026-08-26
+# production run was on Python 3.12; the image has since moved to 3.11, where
+# these notebooks cannot currently run. Check `python -V` first, and see
+# claude/notes/environment.md.
+#
+# Lower bounds are the versions in the JupyterLab image as of 2026-09-17 — the
+# nearest thing to a validated set, since the exact versions behind the
+# 2026-08-26 build were never recorded. icechunk is the exception: it is no
+# longer installed in the image, so its bound is the floor the notebooks have
+# always documented.
+
+icechunk>=2.1
+virtualizarr>=2.4.0
+zarr>=3.1.5
+xarray>=2026.2.0
+
+# Byte-range reads against the CoastWatch HTTPS source. obspec-utils provides
+# the ObjectStoreRegistry the parsers take; it imports as `obspec_utils`.
+obstore>=0.8.2
+obspec-utils>=0.9.0
+
+# The HDF5 group (`14day`) is parsed by virtualizarr's HDFParser, which
+# soft-imports h5py. h5netcdf is the xarray backend used to load the coordinate
+# variables named in `loadable_variables`.
+h5py>=3.13
+h5netcdf>=1.8.1
+
+# The NetCDF-3 groups (`daily`, `14day_v1`) go through NetCDF3Parser, which
+# calls kerchunk.netCDF3.NetCDF3ToZarr, which in turn subclasses scipy's
+# netcdf_file reader. Neither dependency is visible in the notebook imports and
+# neither appears in CLAUDE.md's pip line — they are satisfied only because the
+# JupyterLab image happens to ship them. On a bare env, leaving them out fails
+# both NetCDF-3 groups with a "pip/conda install scipy" hint from kerchunk.
+kerchunk>=0.2.9
+scipy>=1.17.0
+fsspec>=2026.2.0
+
+numpy>=2.3.5
+pandas>=2.3.3
+
+# CoastWatch directory scrape. Its HTTPS endpoint 403s the default
+# python-requests User-Agent, so the notebooks send a browser-like one.
+requests>=2.32
+
+boto3>=1.42        # mirrors docs/notebooks to the destination root
+matplotlib>=3.10   # verification maps at the end of the production notebook
