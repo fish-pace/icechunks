@@ -4,10 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Jupyter notebooks that publish NOAA ocean datasets as Icechunk repositories on Source Cooperative. Two datasets, built two different ways:
+Jupyter notebooks that publish NOAA ocean datasets as Icechunk repositories on Source Cooperative. Three datasets, built two different ways:
 
 - `coastwatch-heat-content/` — **virtual**: the pattern **source NetCDF files → VirtualiZarr (virtual references) → Icechunk repository**, applied to the NOAA CoastWatch Ocean Heat Content archive. The large science arrays are never copied; Icechunk stores metadata and byte-range references back to the originals.
 - `gobai-o2-monthly/` — **materialized**: GOBAI-O2 v2.3 monthly from NCEI, written as real Zarr v3 chunks with `Dataset.to_zarr`. Virtualizing would buy nothing there — the source is a single 12 GB contiguous, uncompressed NetCDF with no chunk boundaries to reference. Keep the two straight: the virtual gotchas below (virtual chunk containers, `url_prefix`, `authorize_virtual_chunk_access`) do not apply to it at all.
+
+- `oa-indicators/` — **virtual**: NCEI accession 0270962, the ocean-acidification-indicator climatology on the North American margins. Same pattern as CoastWatch, but the merge problem is the opposite one: the source is **one indicator per NetCDF file**, twelve files on a byte-identical grid, merged into a single flat group of 72 variables. No time dimension — it is a climatology.
 
 Sibling repos apply the virtual pattern to other datasets — see "Skills and related repos" below.
 
@@ -42,6 +44,14 @@ write** — a later GOBAI version would be a new store. The notebook, README and
 mirrored at the `gobai-o2/` root. The notebook arrived here on 2026-09-17 from
 `nmfs-opensci/gobai-rfrom-icechunks`, where it did not belong; its first commit in this repo is the
 unmodified original, so the 2026-08-06 build outputs are in the history.
+
+**OA indicators: done and static.** Virtual store at `ocean-icechunks/oa-indicators/climatology`
+(`https://data.source.coop/ocean-icechunks/oa-indicators/climatology`), built 2026-09-17 — snapshot
+`3VZQ6VDVY2644RZ9M0Z0`, 84 objects, 35 kB of metadata referencing 82 MB that stays at NCEI. 72
+variables (12 indicators × 6 fields) on `(depth 14, lat 76, lon 141)`. Accession 0270962 is a
+finished product, so there is **no update pipeline to write**. Docs mirrored to the `oa-indicators/`
+root; gridlook viewer at `oa-indicators/viewer/` (102 objects), and unlike the CoastWatch viewer it
+works in an ordinary browser — see the CORS note above. Built in PR #24.
 
 **Next tasks (design open):**
 1. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.**
@@ -129,6 +139,7 @@ pins with them.
 ```
 pip install -r coastwatch-heat-content/requirements.txt   # CoastWatch (virtual)
 pip install -r gobai-o2-monthly/requirements.txt          # GOBAI-O2 monthly (materialized)
+pip install -r oa-indicators/requirements.txt             # OA indicators (virtual)
 ```
 
 They are deliberately separate: the GOBAI-O2 notebook uses no virtualizarr, kerchunk, obstore or
@@ -257,6 +268,32 @@ gitignored.
 - **Variables with different file layouts cannot be merged virtually** — they need separate groups. Here that is why `daily`/`14day_v1`/`14day` are three groups rather than one array.
 - **Coordinate repair before writing.** Some CoastWatch files carry all-zero lat/lon grids. `build_grid_template` probes the first files for a valid grid and `make_repair` substitutes it as a `preprocess` hook on `open_virtual_mfdataset`; files that still fail to open are dropped and counted. The same hook strips NaN attributes, which Zarr metadata (JSON) cannot represent.
 
+## Key gotchas (OA indicators / merging one variable per file)
+
+- **`xr.merge` applies `combine_attrs` to *variable* attributes, not just the dataset's.** So
+  `combine_attrs="drop"` silently empties every variable's attrs, not only the globals. Use
+  `"drop_conflicts"` and clear the per-file globals explicitly (`vds.attrs = {}`) instead.
+- **`vz.to_icechunk` defaults to `mode="w-"`**, so re-running a write against a store that already
+  has a root group raises `ContainsGroupError` rather than being a no-op. The notebook checks for a
+  populated store and skips unless `OVERWRITE` is set.
+- **The source coordinates are unusable as delivered.** The files carry phony HDF5 dimension scales
+  `dep`/`lat`/`lon` — all zeros, marked "a netCDF dimension but not a netCDF variable" — with the
+  real values in separate `depth`/`latitude`/`longitude` variables. xarray hides the phony scales and
+  reports `Dimensions without coordinates`, so `sel(lat=...)` does not work on the source at all.
+  `swap_dims` promotes the real ones; this is metadata-only, which is all a virtual store can do.
+- **Name the coordinates `lat`/`lon`, not `latitude`/`longitude`** — gridlook ranks the short
+  spelling above the long one, and variables whose *names contain* `latitude`/`longitude` are hidden
+  from its variable picker.
+- **gridlook does not need a time dimension.** Every time-specific path in it is gated on a dimension
+  literally named `time` and falls through to a no-op, so `(depth, lat, lon)` renders as a regular
+  grid with a generic slider. It does require the spatial dims to be the **trailing two** and
+  `dimension_names` present in the Zarr metadata.
+- **NCEI sends `Access-Control-Allow-Origin: *`** on ranged GETs, where `coastwatch.noaa.gov` sends
+  no CORS headers at all. That is the whole reason this viewer draws and the CoastWatch one does not.
+  NCEI also serves any User-Agent, unlike CoastWatch.
+- The source files are NetCDF-4/HDF5 only, so **`kerchunk` and `scipy` are not needed** here — the
+  CoastWatch NetCDF-3 path is what drags those in.
+
 ## Manifest splitting (large repos)
 
 For repos with 1000s of time steps, configure manifest splitting to avoid giant manifests at commit time:
@@ -280,6 +317,7 @@ config.manifest.max_concurrent_manifest_fetches_during_commit = 16
 | CoastWatch OHC — North Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` |
 | CoastWatch OHC — South Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` |
 | GOBAI-O2 v2.3 monthly (2004–2024), materialized | `https://data.source.coop/fish-pace/gobai-o2/monthly` |
+| OA indicators, North American margins (climatology), virtual | `https://data.source.coop/ocean-icechunks/oa-indicators/climatology` |
 
 Browser viewers (gridlook, published by `publish_viewer.py`):
 

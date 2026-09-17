@@ -4,7 +4,7 @@ Jupyter notebooks that publish NOAA ocean datasets as
 **[Icechunk](https://icechunk.io) repositories** on
 [Source Cooperative](https://source.coop), anonymously readable with `xarray`.
 
-Two datasets, built two different ways:
+Three datasets, built two different ways:
 
 - **NOAA CoastWatch Ocean Heat Content**, in `coastwatch-heat-content/` — **virtual
   references**. The source NetCDF/HDF5 files stay at CoastWatch and Icechunk stores only
@@ -15,6 +15,10 @@ Two datasets, built two different ways:
   chunks written with `Dataset.to_zarr`, self-contained and independent of the source.
   Its source is one 12 GB contiguous, uncompressed NetCDF at NCEI with no chunk
   boundaries worth referencing, which is exactly the case where virtualizing buys nothing.
+- **Ocean acidification indicators, North American margins**, in `oa-indicators/` —
+  **virtual references**. NCEI ships one NetCDF per indicator; this merges twelve of them
+  into a single store of 72 variables on one grid. The whole store is 35 kB of metadata
+  pointing at 82 MB that stays at NCEI.
 
 ## The published stores
 
@@ -26,8 +30,9 @@ Public, anonymously readable, no account needed:
 | CoastWatch OHC — North Pacific | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` | virtual |
 | CoastWatch OHC — South Pacific | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` | virtual |
 | GOBAI-O2 v2.3 monthly, 2004–2024 | `https://data.source.coop/fish-pace/gobai-o2/monthly` | materialized |
+| OA indicators, North American margins | `https://data.source.coop/ocean-icechunks/oa-indicators/climatology` | virtual |
 
-Both have a **browser viewer** — [gridlook](https://github.com/eeholmes/gridlook),
+All three have a **browser viewer** — [gridlook](https://github.com/eeholmes/gridlook),
 published beside the data by `publish_viewer.py`. The store to open lives in the URL
 fragment, so one build serves any store, and a group is just the last path segment:
 
@@ -39,14 +44,19 @@ fragment, so one build serves any store, and a group is just the last path segme
   therefore blocked by the browser. It renders with a CORS-disabling browser extension;
   see [the viewer section of its README](coastwatch-heat-content/README.md#view-it-in-a-browser).
   Nothing on our side can fix this — only CoastWatch serving the header would.
+- **OA indicators** — [open aragonite saturation state on the globe](https://data.source.coop/ocean-icechunks/oa-indicators/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/oa-indicators/climatology::varname=OmegaA_an).
+  Also a virtual store, but this one *does* draw: `www.ncei.noaa.gov` sends
+  `Access-Control-Allow-Origin: *` where CoastWatch sends nothing. The **Depth** slider
+  moves through the 14 levels.
 
 Each CoastWatch region is a separate repository — the three use different lat/lon grids
 and cannot share a virtual array. Each holds three groups (`daily`, `14day_v1`, `14day`)
 covering different generations and encodings of the product.
 
 Full documentation of each dataset, and how to read it, is in the product README —
-**[`coastwatch-heat-content/README.md`](coastwatch-heat-content/README.md)** and
-**[`gobai-o2-monthly/README.md`](gobai-o2-monthly/README.md)** — each of which is also
+**[`coastwatch-heat-content/README.md`](coastwatch-heat-content/README.md)**,
+**[`gobai-o2-monthly/README.md`](gobai-o2-monthly/README.md)** and
+**[`oa-indicators/README.md`](oa-indicators/README.md)** — each of which is also
 published alongside its store.
 
 ## Quick start
@@ -89,6 +99,10 @@ gobai-o2-monthly/
   README.md                        data documentation, mirrored to the store
   gobai-o2-monthly-icechunk-sc.ipynb   the pipeline that built the GOBAI-O2 store
   requirements.txt                 dependency floors for that notebook
+oa-indicators/
+  README.md                        data documentation, mirrored to the store
+  oa-indicators-icechunk-sc.ipynb  the pipeline that built the OA-indicators store
+  requirements.txt                 dependency floors for that notebook
 icechunk_utils.py                  Source Cooperative credential and repo helpers
 publish_viewer.py                  builds gridlook and publishes it beside a store
 claude/                            working notes for AI coding agents
@@ -103,6 +117,7 @@ notebook needs none of them:
 ```bash
 pip install -r coastwatch-heat-content/requirements.txt   # CoastWatch (virtual)
 pip install -r gobai-o2-monthly/requirements.txt          # GOBAI-O2 monthly (materialized)
+pip install -r oa-indicators/requirements.txt             # OA indicators (virtual)
 ```
 
 **Python 3.12 or newer is required** — every `icechunk` 2.x release is published
@@ -142,3 +157,6 @@ source, not this repository:
 - **GOBAI-O2 v2.3** — released by its authors under CC0 1.0, so no legal obligation to
   cite; scholarly practice still asks that you do. Citations are in
   [`gobai-o2-monthly/README.md`](gobai-o2-monthly/README.md#reuse-and-citation).
+- **OA indicators** — again the store holds no science arrays, only references to NCEI's
+  files. NCEI states no use restrictions for accession 0270962; please cite it. The
+  citation is in [`oa-indicators/README.md`](oa-indicators/README.md#reuse-and-citation).
