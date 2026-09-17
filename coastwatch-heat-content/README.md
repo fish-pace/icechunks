@@ -1,126 +1,76 @@
 # NOAA CoastWatch Ocean Heat Content — Icechunk
 
+**[🌐 View data in browser](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day::varname=ohc)** · **[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (CoastWatch)](https://coastwatch.noaa.gov/pub/socd2/coastwatch/ocean_heat/)**
+
 [Icechunk](https://icechunk.io) stores of the full **NOAA CoastWatch Ocean Heat Content
-(OHC) Product Suite** archive, spanning **2020 to present**, for three regions:
+(OHC) Product Suite** archive — upper-ocean heat content, SST, sea surface height anomaly
+and isotherm depths at 0.25°, daily, **2020-04-30 through 2026-08-26** — for three regions:
 
-| Region | Icechunk repository |
-|---|---|
-| **North Atlantic** (`na`) | `https://data.source.coop/ocean-icechunks/noaa-ohc/na` |
-| **North Pacific** (`np`)  | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` |
-| **South Pacific** (`sp`)  | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` |
-
-Each region is a **separate repository** because the three regions use different lat/lon
-grids and cannot share a virtual Zarr array.
-
-The stores are built by a manual run, not a live feed: the current build covers
-**2020-04-30 through 2026-08-26**. Until an automatic append is in place, the last time
-step will lag the CoastWatch archive by however long has passed since that build.
-
-These repositories do **not** copy the science data. Icechunk stores only metadata and
-byte-range references back to the original NetCDF/HDF5 files hosted at NOAA CoastWatch;
-reads are streamed directly from `coastwatch.noaa.gov` over HTTP range requests
-("virtual chunks"). See [How to open it](#how-to-open-it) for the one extra step this
-requires.
-
-## How these were built
-
-The notebooks that built these stores live in the GitHub repository
-**<https://github.com/fish-pace/icechunks>** (directory `coastwatch-heat-content/`). Two of
-them sit alongside this README on Source Cooperative:
-
-| Notebook | What it shows | Here? |
+| Region | Icechunk repository | Grid |
 |---|---|---|
-| `ocean-heat-test-local.ipynb` | Minimal proof of concept: CoastWatch NetCDF → VirtualiZarr → a **local** Icechunk store. | yes |
-| `ocean-heat-production-sc.ipynb` | The full parametrized pipeline that built all three region repos (`na`/`np`/`sp`). | yes |
-| `ocean-heat-test-sc.ipynb` | Minimal proof of concept writing to Icechunk on Source Cooperative. | GitHub only |
+| **North Atlantic** (`na`) | `https://data.source.coop/ocean-icechunks/noaa-ohc/na` | 241 × 401 |
+| **North Pacific** (`np`) | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` | 241 × 721 |
+| **South Pacific** (`sp`) | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` | 241 × 641 |
 
-`ocean-heat-test-sc.ipynb` is kept in the GitHub repository rather than here because it
-needs Source Cooperative write credentials and writes to a private scratch repository.
-`ocean-heat-test-local.ipynb` shows the same steps and needs no credentials at all, so it
-is the better starting point.
+Each region is a **separate repository** because the three use different lat/lon grids and
+cannot share a virtual Zarr array. Each holds the same three groups — see
+[Groups inside each repository](#groups-inside-each-repository).
 
-They are provided to document how the archive was assembled and as a starting point for
-anyone building something similar. The write notebooks import shared helpers from
-`icechunk_utils.py` (included here), and `requirements.txt` (also included) lists the
-package floors they were built against — note that `icechunk` 2.x requires **Python
-3.12 or newer**. Running the write notebooks additionally requires Source Cooperative
-write credentials, so for most readers they are read-along references.
+These stores are **virtual**: they copy no science data at all. Icechunk holds Zarr
+metadata and byte-range references back to the original NetCDF/HDF5 files hosted at NOAA
+CoastWatch, so a store of a multi-terabyte archive is megabytes of metadata and reads are
+streamed from `coastwatch.noaa.gov` over HTTP range requests. That costs one extra step
+when opening — see [How to open it](#how-to-open-it) — and it is why the browser viewer
+needs the workaround described below.
 
-## About the data
+The stores are built by a manual run, not a live feed. Until an automatic append is in
+place, the last time step lags the CoastWatch archive by however long has passed since the
+build recorded in [Provenance](#provenance).
 
-The Satellite Ocean Heat Content Suite (produced by USDOC/NOAA/NESDIS/OSPO with the
-University of Miami/Rosenstiel School) blends altimeter sea-surface-height anomalies with
-GeoPolar blended SST and the SMARTS climatology to estimate upper-ocean heat content and
-related fields. It is widely used in hurricane-intensification analysis.
+## View it in a browser
 
-- **Resolution:** 0.25° (~25 km), daily
-- **Projection:** geographic latitude/longitude (WGS84-style; see the `crs` variable)
-- **Conventions:** CF-1.6
-- **Source product:** <http://www.ospo.noaa.gov/Products/ocean/ocean_heat.html>
-- **Source archive:** <https://coastwatch.noaa.gov/pub/socd2/coastwatch/ocean_heat/>
+> ### ⚠️ Read this first: the data will not draw unless you disable CORS
+>
+> The viewer loads, lists the variables and draws the map graticule, and then stops —
+> because the science arrays are not in the store. They are at `coastwatch.noaa.gov`,
+> which serves byte ranges happily to a script but sends no
+> `Access-Control-Allow-Origin` header, so **your browser** refuses to hand those bytes
+> to the page. This is a rule browsers enforce on the page's behalf; nothing the viewer
+> or this repository can contain will waive it.
+>
+> To look at the data anyway, install a CORS-disabling browser extension (search your
+> browser's extension store for "CORS unblock" or "Allow CORS"), enable it, and reload
+> the viewer. Such an extension switches off a real security protection for the sites you
+> enable it on, so turn it back off when you are done — or use a separate browser profile
+> for it.
+>
+> The code path below has no such problem: this affects browsers only.
 
-Each region covers a different domain (e.g. the North Atlantic grid is 0°–60°N,
-100°W–0°, 241 × 401). Open a repo and inspect its `latitude`/`longitude` coordinates for
-the exact extent.
+With that in place, the viewer streams chunks straight from the store — no install, no
+account, no download:
 
-### Variables
-
-| Variable | Long name | Units |
-|---|---|---|
-| `ohc` | ocean heat content | kJ cm⁻² |
-| `sst` | sea surface temperature | °C |
-| `ssha` | sea surface height above mean sea level | cm |
-| `sshaE` | error in objective analysis of SSHA | — |
-| `iso20C` | depth of the 20 °C isotherm | m |
-| `iso26C` | depth of the 26 °C isotherm | m |
-| `omld` | ocean mixed layer thickness | m |
-| `landmask` | land/sea binary mask | — |
-| `quality_flag` | per-cell SST quality flag (0 = good, 1 = bad) | — (`14day*` groups only) |
-| `crs` | grid-mapping container (`grid_mapping_name = latitude_longitude`) | — |
-| `quality_information` | scalar retrieval-statistics summary | — (`14day_v1` only) |
-
-Coordinates are `time`, `latitude` (`degrees_north`), and `longitude` (`degrees_east`).
-
-Missing data is represented as `-999` in the source files. A CF `missing_value`
-attribute has been added where the source omitted it, so xarray masks `-999` to `NaN`
-automatically on read — no manual masking needed.
-
-## Groups inside each repository
-
-Every region repo has the same three groups. They exist because the archive is not
-homogeneous, and a single virtual Zarr array cannot span files that differ in variable
-set or byte-level encoding:
-
-| Group | Source directory | Period | Format |
+| Region | `daily` | `14day_v1` | `14day` (current) |
 |---|---|---|---|
-| `daily` | `{region}/2020`–`{region}/2024` | 2020 → 2024-01-18 | NetCDF-3 Classic, big-endian |
-| `14day_v1` | `{region}14/2024` → `{region}14/2025` day 084 | 2024-01-15 → 2025-03-25 | NetCDF-3 Classic, big-endian |
-| `14day` | `{region}14/2025` day 085 → present | 2025-03-27 → present | HDF5, little-endian |
+| North Atlantic | [`na/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/daily::varname=ohc) | [`na/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day_v1::varname=ohc) | [`na/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/na/14day::varname=ohc) |
+| North Pacific | [`np/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/daily::varname=ohc) | [`np/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/14day_v1::varname=ohc) | [`np/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/np/14day::varname=ohc) |
+| South Pacific | [`sp/daily`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/daily::varname=ohc) | [`sp/14day_v1`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/14day_v1::varname=ohc) | [`sp/14day`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html#icechunk+https://data.source.coop/ocean-icechunks/noaa-ohc/sp/14day::varname=ohc) |
 
-1. **`daily` vs. `14day*`** — these are two generations of the product (source dirs
-   `{region}` and `{region}14`) with **different variable sets**. The `14day*` files add
-   the SST `quality_flag` variable (and `14day_v1` additionally carries a scalar
-   `quality_information` summary). Keeping them separate preserves each generation's
-   variables without forcing empty columns.
-2. **`14day_v1` vs. `14day`** — partway through 2025 the source files switched from
-   **NetCDF-3 (big-endian)** to **HDF5 (little-endian)**. Because Icechunk stores a single
-   codec pipeline per array and references the original bytes, big-endian and
-   little-endian chunks cannot live in one virtual array. The split is at day-of-year
-   084/085 of 2025, verified identical for all three regions.
+Those links open `ohc`. Any other variable works the same way — edit `varname=` at the end
+of the URL to `sst`, `ssha`, `iso26C` and so on. Everything after `#` is a URL *fragment*,
+which the host never sees, so one viewer build serves every store and group; the group is
+simply the last path segment of the store URL.
 
-> **Note on the overlap and gaps.** The `daily` and `14day` products overlap by a few days
-> around January 2024 (both cover 2024-01-15…2024-01-18). A handful of source files with
-> corrupt (all-zero) coordinates and data were dropped during construction, so a group may
-> begin one day after its nominal codec boundary.
-
-For a continuous single time series, open the groups separately and concatenate the
-shared variables at read time (see below).
+The viewer is [gridlook](https://github.com/eeholmes/gridlook), a WebGL globe for
+cloud-hosted Zarr and Icechunk stores, published alongside the data at
+[`noaa-ohc/viewer/`](https://data.source.coop/ocean-icechunks/noaa-ohc/viewer/index.html).
+Give it a moment on first load: it fetches the store's metadata before drawing. It is a
+browser reading a remote archive, so treat it as a look, not an analysis.
 
 ## How to open it
 
 Requires `icechunk >= 2.1` and `xarray`. The science arrays live at CoastWatch, outside
-these Icechunk stores, so you must authorize the virtual chunk container at open time —
-this is the one non-standard step.
+these stores, so you must authorize the virtual chunk container at open time — this is the
+one non-standard step, and the price of not copying the data.
 
 ```python
 import icechunk
@@ -140,7 +90,7 @@ ds_daily    = xr.open_zarr(store, group="daily",    consolidated=False, chunks={
 ds_14day_v1 = xr.open_zarr(store, group="14day_v1", consolidated=False, chunks={})
 ds_14day    = xr.open_zarr(store, group="14day",    consolidated=False, chunks={})
 
-print(ds_daily)
+print(ds_14day)
 ```
 
 CoastWatch blocks the default `python-requests` User-Agent, but Icechunk sends its own
@@ -165,21 +115,149 @@ ds = xr.concat(
 )
 ```
 
-Use `chunks={}` (dask-backed) as shown — with `chunks=None` the arrays are plain NumPy
-and this concatenation eagerly materializes several GB into memory.
+Use `chunks={}` (dask-backed) as shown — with `chunks=None` the arrays are plain NumPy and
+this concatenation eagerly materializes several GB into memory.
+
+## About the data
+
+The Satellite Ocean Heat Content Suite (produced by USDOC/NOAA/NESDIS/OSPO with the
+University of Miami/Rosenstiel School) blends altimeter sea-surface-height anomalies with
+GeoPolar blended SST and the SMARTS climatology to estimate upper-ocean heat content and
+related fields. It is widely used in hurricane-intensification analysis.
+
+- **Resolution:** 0.25° (~25 km), daily
+- **Projection:** geographic latitude/longitude (WGS84-style; see the `crs` variable)
+- **Conventions:** CF-1.6
+- **Source product:** <http://www.ospo.noaa.gov/Products/ocean/ocean_heat.html>
+- **Source archive:** <https://coastwatch.noaa.gov/pub/socd2/coastwatch/ocean_heat/>
+
+Each region covers a different domain — the North Atlantic grid is 0°–60°N, 100°W–0°, at
+241 × 401. Open a repo and inspect its `latitude`/`longitude` coordinates for the exact
+extent of the others.
+
+### Variables
+
+| Variable | Long name | Units |
+|---|---|---|
+| `ohc` | ocean heat content | kJ cm⁻² |
+| `sst` | sea surface temperature | °C |
+| `ssha` | sea surface height above mean sea level | cm |
+| `sshaE` | error in objective analysis of SSHA | — |
+| `iso20C` | depth of the 20 °C isotherm | m |
+| `iso26C` | depth of the 26 °C isotherm | m |
+| `omld` | ocean mixed layer thickness | m |
+| `landmask` | land/sea binary mask | — |
+| `quality_flag` | per-cell SST quality flag (0 = good, 1 = bad) | — (`14day*` groups only) |
+| `crs` | grid-mapping container (`grid_mapping_name = latitude_longitude`) | — |
+| `quality_information` | scalar retrieval-statistics summary | — (`14day_v1` only) |
+
+Coordinates are `time`, `latitude` (`degrees_north`) and `longitude` (`degrees_east`).
+
+Missing data is `-999` in the source files. A CF `missing_value` attribute has been added
+where the source omitted it, so xarray masks `-999` to `NaN` automatically on read — no
+manual masking needed.
+
+## Groups inside each repository
+
+Every region repo has the same three groups. They exist because the archive is not
+homogeneous, and a single virtual Zarr array cannot span files that differ in variable set
+or byte-level encoding:
+
+| Group | Source directory | Period | Format |
+|---|---|---|---|
+| `daily` | `{region}/2020`–`{region}/2024` | 2020-04-30 → 2024-01-18 | NetCDF-3 Classic, big-endian |
+| `14day_v1` | `{region}14/2024` → `{region}14/2025` day 084 | 2024-01-15 → 2025-03-25 | NetCDF-3 Classic, big-endian |
+| `14day` | `{region}14/2025` day 085 → present | 2025-03-27 → 2026-08-26 | HDF5, little-endian |
+
+1. **`daily` vs. `14day*`** — two generations of the product (source dirs `{region}` and
+   `{region}14`) with **different variable sets**. The `14day*` files add the SST
+   `quality_flag` variable, and `14day_v1` additionally carries a scalar
+   `quality_information` summary. Keeping them separate preserves each generation's
+   variables without forcing empty columns.
+2. **`14day_v1` vs. `14day`** — partway through 2025 the source files switched from
+   **NetCDF-3 (big-endian)** to **HDF5 (little-endian)**. Because Icechunk stores a single
+   codec pipeline per array and references the original bytes, big-endian and
+   little-endian chunks cannot live in one virtual array. The split is at day-of-year
+   084/085 of 2025, verified identical for all three regions.
+
+Time steps per group, as built:
+
+| Region | `daily` | `14day_v1` | `14day` | Corrupt source files dropped |
+|---|---|---|---|---|
+| `na` | 1357 | 430 | 507 | 6 (`14day`) |
+| `np` | 1356 | 390 | 513 | 1 (`daily`), 21 (`14day_v1`) |
+| `sp` | 1349 | 411 | 513 | none |
+
+> **Note on the overlap and gaps.** `daily` and `14day_v1` overlap by a few days around
+> January 2024 (both cover 2024-01-15…2024-01-18). A handful of source files with corrupt
+> (all-zero) coordinates and data were dropped during construction — they are bad in the
+> source archive, not mishandled here — so a group may begin one day after its nominal
+> boundary, and the counts differ between regions.
+
+For a continuous single time series, open the groups separately and concatenate the shared
+variables at read time, as shown above.
+
+## How this was built
+
+The notebooks that built these stores live in the GitHub repository
+**<https://github.com/fish-pace/icechunks>** (directory `coastwatch-heat-content/`). Two of
+them sit alongside this README on Source Cooperative:
+
+| Notebook | What it shows | Here? |
+|---|---|---|
+| `ocean-heat-test-local.ipynb` | Minimal proof of concept: CoastWatch NetCDF → VirtualiZarr → a **local** Icechunk store. Runs with no credentials; the committed copy carries its outputs. | yes |
+| `ocean-heat-production-sc.ipynb` | The full parametrized pipeline that built all three region repos. Its committed outputs are the build log. | yes |
+| `ocean-heat-test-sc.ipynb` | The same proof of concept, writing to Icechunk on Source Cooperative. | GitHub only |
+
+`ocean-heat-test-sc.ipynb` is deliberately not published here: it needs Source Cooperative
+write credentials, so it is no use to a reader who has just found the stores, and
+`ocean-heat-test-local.ipynb` shows the same steps with none. It writes only to a scratch
+repository and refuses to touch the published prefix.
+
+**Start with `ocean-heat-test-local.ipynb`.** It is short, needs no account, and its
+committed outputs show the whole pattern working: a ranged GET against CoastWatch, three
+daily files virtualized and appended along `time` in about one second each, then the store
+reopened and one `ohc` field read back through its virtual references.
+
+The write notebooks import shared helpers from `icechunk_utils.py` (included here), and
+`requirements.txt` (also included) lists the package floors. **Python 3.12 or newer is
+required** — every `icechunk` 2.x release is published `requires_python = ">=3.12"`.
+
+```bash
+pip install -r requirements.txt
+```
+
+The browser viewer is published separately by `publish_viewer.py` in the GitHub
+repository (`python publish_viewer.py --product noaa-ohc --build ~/gridlook`). It is a
+plain static build of gridlook and holds no data of its own.
+
+### Provenance
+
+| When | What |
+|---|---|
+| 2026-08-26 | All three regions built at this location and committed — `na` head `PD810W3C6EZ7V5Y5094G`, `np` head `F29D3QM6P7G56RH3ZMYG`, `sp` head `MCV4SVX7J65PRQ15DY2G`. Four snapshots each: one per group, on top of the repository's first commit |
+| 2026-09-17 | gridlook viewer published at `noaa-ohc/viewer/` (102 files, 22.5 MB) |
+
+An earlier build of the same archive lived under `fish-pace/coastwatch/ocean-heat/`; these
+repositories replaced it and it is no longer maintained. Every code block on this page was
+executed against the live stores before it was published.
 
 ## Reuse and citation
 
-The notebooks and helper code that built these stores are Apache-2.0 and free to reuse and
-adapt without attribution — see the
-[GitHub repository](https://github.com/fish-pace/icechunks). The **data** is a separate
-matter and is not ours: for data use and citation, follow the source product credited
-below.
+**Code.** The notebooks and helpers are released under
+[Apache-2.0](https://github.com/fish-pace/icechunks/blob/main/LICENSE) and are free to use,
+copy, adapt and redistribute, commercially or not — no attribution required.
+
+**Data.** The data is not ours, and these stores contain none of it — only references to
+files hosted by NOAA CoastWatch. For data use and citation, follow the source product
+credited below.
 
 ## Credits
 
 - **Data:** USDOC/NOAA/NESDIS/OSPO; University of Miami / Rosenstiel School of Marine and
   Atmospheric Science (contact: Lynn K. Shay). Product page:
   <http://www.ospo.noaa.gov/Products/ocean/ocean_heat.html>
-- **Icechunk packaging:** built with [VirtualiZarr](https://virtualizarr.readthedocs.io)
-  and [Icechunk](https://icechunk.io); the original file bytes remain at NOAA CoastWatch.
+- **Icechunk packaging:** built with [VirtualiZarr](https://virtualizarr.readthedocs.io),
+  [Icechunk](https://icechunk.io) and [Xarray](https://xarray.dev), hosted on
+  [Source Cooperative](https://source.coop/ocean-icechunks/noaa-ohc); the original file
+  bytes remain at NOAA CoastWatch.

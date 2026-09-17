@@ -1,7 +1,11 @@
-# Dependencies for the CoastWatch OHC virtual-Icechunk notebooks in
-# coastwatch-heat-content/ (see also CLAUDE.md, "Required packages").
+# Dependencies for the CoastWatch OHC virtual-Icechunk notebooks that sit beside
+# this file (see also CLAUDE.md, "Required packages").
 #
-#     pip install -r requirements.txt
+#     pip install -r requirements.txt                    # from this directory
+#     pip install -r coastwatch-heat-content/requirements.txt   # from the repo root
+#
+# Separate from gobai-o2-monthly/requirements.txt on purpose: that pipeline is
+# materialized and needs none of the virtualization stack below.
 #
 # Lower bounds only, and deliberately no lock file: these notebooks run in
 # JupyterLab on a managed image whose stack moves on its own, so exact pins
