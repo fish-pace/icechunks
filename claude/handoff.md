@@ -69,22 +69,61 @@ Worth knowing before touching that store or writing a similar one:
   (repo + one snapshot + one transaction, no refs). Deleted. Watch for this whenever a
   prefix is corrected after a first create.
 
-## The GOBAI-O2 viewer (2026-09-17)
+## The GOBAI-O2 viewer (2026-09-17) — live and confirmed
 
 gridlook is published at `fish-pace/gobai-o2/viewer/` (101 files, 22.5 MB) by the new
 `publish_viewer.py`, and linked from the README's top nav row and its own section.
+**Eli opened it in a browser and it renders**, so the whole path — build, upload, content
+types, CORS, icechunk-js reading a materialized store — is proven end to end.
 Four links, one per variable: `https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy` and the same for `uncer`,
 `temp`, `sal`.
 
-**It has not been opened in a browser.** What was verified from here: all 101 objects
-serve 200 with correct content types (including `application/wasm`), and the cross-origin
-fetches the viewer makes against the store — `repo`, `snapshots/…`, `manifests/…`, ranged
-— return 206 with `access-control-allow-origin: *`. Whether the globe actually draws is
-still unchecked.
+Verified from here: all 101 objects serve 200 with correct content types (including
+`application/wasm`), and the cross-origin fetches the viewer makes against the store —
+`repo`, `snapshots/…`, `manifests/…`, ranged — return 206 with
+`access-control-allow-origin: *`. There is no browser on the hub, so the rendering itself
+was confirmed by Eli, not here. That division is the norm: check the transport, then ask.
+
+The README's top nav row is **plain markdown links, not centered HTML** — GitHub allows
+`<p align="center">`, but the Source Cooperative repo page renders the README through its
+own pipeline and the raw file is served as plain text, so HTML would be a gamble in two
+places out of three.
 
 Source Cooperative's static-hosting behaviour is in CLAUDE.md under "The browser viewer";
 the two that cost time were content types never being inferred, and the edge 403ing the
 default `Python-urllib` User-Agent, which reads exactly like a permissions failure.
+
+## Next task
+
+**Issue #20 — OA indicators** (<https://github.com/fish-pace/icechunks/issues/20>), when
+Eli says to start. Build a **virtual** Icechunk store, modelled on
+`coastwatch-heat-content/`, from NCEI accession
+[0270962](https://www.ncei.noaa.gov/data/oceans/ncei/ocads/metadata/0270962.html); data at
+<https://www.ncei.noaa.gov/data/oceans/ncei/ocads/data/0270962/>, readable over HTTPS and
+byte-subsettable. **One variable per NetCDF file, all to be merged into one store.** Then
+a README, the reproducibility artifacts the other examples have, and a viewer. Destination
+`https://source.coop/ocean-icechunks/oa-indicators`; the issue also says to test against
+`~/test-repo/oa-indicators` (probably the `ocean-icechunks/test-repo` scratch repo — worth
+confirming with Eli before writing anything to it).
+
+Most of the parts exist. Reuse, do not reinvent:
+
+- `coastwatch-heat-content/ocean-heat-production-sc.ipynb` for the virtual pattern, and
+  `ocean-heat-test-local.ipynb` for a credential-free proof of concept first.
+- `publish_viewer.py` for the viewer — add one `PRODUCTS` entry (bucket
+  `ocean-icechunks`, its own viewer prefix, the store URL, the variable names). One
+  gridlook build serves any store; nothing else should need changing. But note the
+  CoastWatch caveat in CLAUDE.md: if the variables end up in **groups**, a link needs more
+  than a store URL and a variable name, and that gap is still unsolved.
+- The GOBAI-O2 set is the current template for "reproducibility artifacts": a README with
+  a nav row and executed code blocks, a per-product `requirements.txt`, and a notebook
+  that runs end to end with `RUN_WRITE`/`RUN_MIRROR` defaulting to `False`.
+- `virtual-icechunk` skill first — this one is virtual, so it applies (it does not cover
+  the materialized GOBAI-O2 work).
+
+Merging one variable per file into a single store is the part with no precedent here:
+CoastWatch splits into groups because of codec differences, which is the opposite problem.
+Expect that to be where the design effort goes.
 
 ## Open threads
 
