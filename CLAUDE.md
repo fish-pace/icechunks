@@ -50,6 +50,36 @@ unmodified original, so the 2026-08-06 build outputs are in the history.
    when new source files appear, still needs to be figured out. Until it exists the repos stay frozen
    at the last manual run, so they drift behind the source archive by however long since.
 
+## The browser viewer (`publish_viewer.py`)
+
+`python publish_viewer.py --product gobai-o2 --build ~/gridlook [--prune]` builds
+[gridlook](https://github.com/eeholmes/gridlook) and uploads the static build to
+`fish-pace/gobai-o2/viewer/`. `--product` is required, `--dry-run` lists without uploading,
+and `PRODUCTS` is the one place a new store's viewer is configured. The store is named in
+the URL **fragment** (`…/viewer/index.html#icechunk+<store url>::varname=oxy`), which the
+host never sees, so one build serves any store and the viewer holds no data of its own.
+A sibling script does the same for NODD buckets in `nmfs-opensci/gobai-rfrom-icechunks`.
+
+The CoastWatch OHC stores have no viewer entry: their data is in groups (`daily`,
+`14day_v1`, `14day`), so a link needs more than a store URL and a variable name.
+
+What Source Cooperative does and does not do for a static site (checked 2026-09-17):
+
+- **CORS is wide open** — `access-control-allow-origin: *`, all headers exposed, `Range`
+  honoured, on GET and on the OPTIONS preflight. A viewer served anywhere can read a store.
+- **Content types are served as uploaded, never inferred.** An upload without
+  `ContentType` comes back `binary/octet-stream`, and a browser refuses an ES module or a
+  wasm blob served that way. `publish_viewer.py` sets the type for every extension.
+- **No directory index.** `…/viewer/` returns **400**; links must name `index.html`.
+- **The edge 403s the default `Python-urllib` User-Agent.** Any check from Python has to
+  send its own; `curl` and boto3 are unaffected. This looks exactly like a permissions
+  failure and is not one.
+- `Cache-Control` is accepted on upload but not echoed back on GET.
+
+Node: gridlook's `package.json` asks for Node >= 24.16; the 2026-09-17 build ran fine on
+the image's Node 20.19.6. Build with `vite build --sourcemap false` and a capped heap —
+`npm run build` adds `vue-tsc` and source maps and gets OOM-killed on a small machine.
+
 ## Skills and related repos
 
 - **`virtual-icechunk` skill** — <https://github.com/nmfs-opensci/agent-skills> (`skills/virtual-icechunk/`, checked out locally at `~/agent-skills`). The shared, agent-independent guidance for building, validating, documenting and auditing virtual Icechunk stores. Prefer it over re-deriving practice from this repo's notebooks, and feed genuinely new lessons back into it rather than only into this file.

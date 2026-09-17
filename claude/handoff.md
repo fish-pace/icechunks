@@ -69,6 +69,23 @@ Worth knowing before touching that store or writing a similar one:
   (repo + one snapshot + one transaction, no refs). Deleted. Watch for this whenever a
   prefix is corrected after a first create.
 
+## The GOBAI-O2 viewer (2026-09-17)
+
+gridlook is published at `fish-pace/gobai-o2/viewer/` (101 files, 22.5 MB) by the new
+`publish_viewer.py`, and linked from the README's top nav row and its own section.
+Four links, one per variable: `https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy` and the same for `uncer`,
+`temp`, `sal`.
+
+**It has not been opened in a browser.** What was verified from here: all 101 objects
+serve 200 with correct content types (including `application/wasm`), and the cross-origin
+fetches the viewer makes against the store — `repo`, `snapshots/…`, `manifests/…`, ranged
+— return 206 with `access-control-allow-origin: *`. Whether the globe actually draws is
+still unchecked.
+
+Source Cooperative's static-hosting behaviour is in CLAUDE.md under "The browser viewer";
+the two that cost time were content types never being inferred, and the edge 403ing the
+default `Python-urllib` User-Agent, which reads exactly like a permissions failure.
+
 ## Open threads
 
 - **Auto-update pipeline — undesigned, and the only substantial work left.** `write_group`

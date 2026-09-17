@@ -1,5 +1,7 @@
 # GOBAI-O2 v2.3 (monthly) — Icechunk
 
+**[🌐 View data in browser](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy)** · **[💻 Data access (code)](#how-to-open-it)** · **[📦 Data access (NCEI)](https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0259304)**
+
 An [Icechunk](https://icechunk.io) store of the complete **GOBAI-O2 v2.3** monthly
 dataset: global gridded ocean-interior dissolved oxygen, its uncertainty, temperature and
 salinity, **2004-01 through 2024-12**, on a 1° × 1° × 58-level pressure grid.
@@ -17,6 +19,26 @@ is 5.59 GB in 12,858 objects.
 The dataset is complete and static — GOBAI-O2 v2.3 is a finished archive version, not a
 growing feed — so this store needs no update pipeline. A later GOBAI-O2 version would be a
 new store.
+
+## View it in a browser
+
+No install, no account, no download — the viewer streams chunks straight from the store:
+
+| Field | Viewer |
+|---|---|
+| Dissolved oxygen | [Open `oxy` in the viewer](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=oxy) |
+| Total uncertainty | [Open `uncer` in the viewer](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=uncer) |
+| Temperature | [Open `temp` in the viewer](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=temp) |
+| Salinity | [Open `sal` in the viewer](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html#icechunk+https://data.source.coop/fish-pace/gobai-o2/monthly::varname=sal) |
+
+The viewer is [gridlook](https://github.com/eeholmes/gridlook), a WebGL globe for
+cloud-hosted Zarr and Icechunk stores, published alongside the data at
+[`gobai-o2/viewer/`](https://data.source.coop/fish-pace/gobai-o2/viewer/index.html). The store to open is in the URL *fragment* after `#`, so any
+store can be swapped into the same link — nothing about the viewer is specific to this
+dataset. Give it a moment on first load: it fetches the store's metadata before drawing.
+
+It is a browser rendering a multi-gigabyte store over the network, so treat it as a look,
+not an analysis. For anything quantitative use the code path below.
 
 ## How to open it
 
@@ -96,6 +118,11 @@ Measured anonymously over the public endpoint, those three reads take about 0.4 
 and 1.3 s.
 
 ## How this was built
+
+The viewer is published by `publish_viewer.py` in the
+[GitHub repository](https://github.com/fish-pace/icechunks)
+(`python publish_viewer.py --product gobai-o2 --build ~/gridlook`); it is a plain static
+build of gridlook, and holds no data of its own.
 
 The notebook that built it sits next to this README:
 **`gobai-o2-monthly-icechunk-sc.ipynb`** (also in the GitHub repository
