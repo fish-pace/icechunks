@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Jupyter notebooks that demonstrate the pattern **source NetCDF files → VirtualiZarr (virtual references) → Icechunk repository**, applied to one dataset: the NOAA CoastWatch Ocean Heat Content archive, in `coastwatch-heat-content/`. The large science arrays are never copied; Icechunk stores metadata and byte-range references back to the originals. Sibling repos apply the same pattern to other datasets — see "Skills and related repos" below.
+Jupyter notebooks that publish NOAA ocean datasets as Icechunk repositories on Source Cooperative. Two datasets, built two different ways:
+
+- `coastwatch-heat-content/` — **virtual**: the pattern **source NetCDF files → VirtualiZarr (virtual references) → Icechunk repository**, applied to the NOAA CoastWatch Ocean Heat Content archive. The large science arrays are never copied; Icechunk stores metadata and byte-range references back to the originals.
+- `gobai-o2-monthly/` — **materialized**: GOBAI-O2 v2.3 monthly from NCEI, written as real Zarr v3 chunks with `Dataset.to_zarr`. Virtualizing would buy nothing there — the source is a single 12 GB contiguous, uncompressed NetCDF with no chunk boundaries to reference. Keep the two straight: the virtual gotchas below (virtual chunk containers, `url_prefix`, `authorize_virtual_chunk_access`) do not apply to it at all.
+
+Sibling repos apply the virtual pattern to other datasets — see "Skills and related repos" below.
 
 ## Status & roadmap (last updated 2026-09-17)
 
@@ -28,6 +33,16 @@ Coverage as built (2020-04-30 → 2026-08-26), from the executed notebook's outp
 Corrupt source files are dropped by design (`open_region` counts them); the per-region counts
 differ because the bad files are in the source archive, not in our handling of it.
 
+**GOBAI-O2 v2.3 monthly: done and static.** Materialized store at `fish-pace/gobai-o2/monthly`
+(`https://data.source.coop/fish-pace/gobai-o2/monthly`), built 2026-08-06 — snapshot
+`8DKFSNN3G386BXJS8X6G`, tag `v2.3`, 12,858 objects, 5.59 GB, chunks `(14, 2, 73, 120)`. Snapshot
+`3A41NX29VSPEXA94ES9G` (2026-09-17) is a metadata-only fix of the `license` attribute to CC0 1.0.
+GOBAI-O2 v2.3 is a finished archive version, not a growing feed, so there is **no update pipeline to
+write** — a later GOBAI version would be a new store. The notebook, README and `requirements.txt` are
+mirrored at the `gobai-o2/` root. The notebook arrived here on 2026-09-17 from
+`nmfs-opensci/gobai-rfrom-icechunks`, where it did not belong; its first commit in this repo is the
+unmodified original, so the 2026-08-06 build outputs are in the history.
+
 **Next tasks (design open):**
 1. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.**
    `write_group` is already idempotent/append-friendly (skips groups that exist), but it does not
@@ -46,13 +61,17 @@ differ because the bad files are in the source archive, not in our handling of i
 
 ## Required packages
 
-Install from `requirements.txt` at the repo root — lower bounds, no lock file, reasoning inline.
-It is also mirrored to the destination root, so a reader who finds the repos on Source Cooperative
-gets the pins with them.
+Each pipeline declares its own floors — lower bounds, no lock file, reasoning inline. Both are
+mirrored to their destination roots, so a reader who finds the stores on Source Cooperative gets the
+pins with them.
 
 ```
-pip install -r requirements.txt
+pip install -r requirements.txt                    # CoastWatch (virtual)
+pip install -r gobai-o2-monthly/requirements.txt   # GOBAI-O2 monthly (materialized)
 ```
+
+They are deliberately separate: the GOBAI-O2 notebook uses no virtualizarr, kerchunk, obstore or
+scipy, and adds netCDF4 (the only engine that reads the `#mode=bytes` URL form).
 
 Do not use conda; the env will not solve. Two constraints that bite:
 
@@ -103,6 +122,15 @@ The **write** notebooks (`ocean-heat-production-sc.ipynb`, `ocean-heat-test-sc.i
 - NOAA S3 sources use `skip_signature=True` / `anonymous=True`.
 - CoastWatch HTTPS requires a browser-like User-Agent header; the default `python-requests` UA returns 403.
 
+## Notebook inventory (`gobai-o2-monthly/`)
+
+One notebook, `gobai-o2-monthly-icechunk-sc.ipynb`, mirrored to the `gobai-o2/` root along with its
+README and `requirements.txt`. It is guarded by two flags, both `False` in the committed copy:
+`RUN_WRITE` (open credentials and rebuild the store) and `RUN_MIRROR` (upload the docs). With both
+off it runs end to end with no credentials and writes nothing — opens the source, builds the
+metadata and encoding, skips the write, then validates the published store against the source. The
+committed outputs are from exactly that run (2026-09-17, 57 s, clean Python 3.12 venv).
+
 ## Notebook inventory (`coastwatch-heat-content/`)
 
 All three notebooks read the same source — NOAA CoastWatch OHC over HTTPS.
@@ -120,6 +148,24 @@ steps with none. It writes to `ocean-icechunks/test-repo/noaa-ohc` (the scratch 
 clear cell is guarded by both a `RUN_CLEAR` flag and a `PROTECTED` set that refuses any
 prefix holding a published archive. It carries no saved outputs by design — it is a
 template of the steps.
+
+## Key gotchas (GOBAI-O2 / materialized)
+
+- **NCEI's landing-page download button is broken** — `/archive/accession/download/0259304` 302-loops.
+  The archive filesystem path works and honours range requests:
+  `https://www.ncei.noaa.gov/data/oceans/archive/arc0207/0259304/5.5/data/0-data/GOBAI-O2-v2.3.nc`
+  (12,207,313,813 bytes). Do not conclude NCEI is down from the button alone.
+- **`engine="netcdf4"` plus a `#mode=bytes` URL suffix streams the source**, no download. h5netcdf
+  cannot do this. Opening takes ~6 s, one `(lat, lon)` plane ~1 s.
+- **Never sample a contiguous, uncompressed source through dask chunks.** Comparing 81 scattered
+  points with the source opened at `chunks=(14, 2, 73, 120)` took **11m41s**, because each point
+  drags in a whole chunk and a chunk is thousands of strided range requests. Re-opening the source
+  with `chunks=None` for the sample made the same notebook run take **57 s**.
+- **The `license` attribute was wrong in the first build** (CC BY 4.0). GOBAI-O2 ships CC0 1.0;
+  NCEI distributes the text as `GOBAI-O2-v2.3-license.txt` beside the data. Fixed by opening a
+  writable session, `zarr.open_group(...).attrs.put(...)` and committing — a metadata-only commit
+  rewrites no chunks and takes seconds.
+- **Longitudes run 20.5 → 379.5**, not 0–360. That is the source grid; it is kept as is.
 
 ## Key gotchas
 
@@ -155,6 +201,7 @@ config.manifest.max_concurrent_manifest_fetches_during_commit = 16
 | CoastWatch OHC — North Atlantic (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/na` |
 | CoastWatch OHC — North Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/np` |
 | CoastWatch OHC — South Pacific (2020–present) | `https://data.source.coop/ocean-icechunks/noaa-ohc/sp` |
+| GOBAI-O2 v2.3 monthly (2004–2024), materialized | `https://data.source.coop/fish-pace/gobai-o2/monthly` |
 
 Each CoastWatch OHC region is a **separate repo** (different lat/lon grids). Every region repo has three groups: `daily` (original `{region}` product, NetCDF-3), `14day_v1` (`{region}14` NetCDF-3 big-endian), `14day` (`{region}14` HDF5 little-endian). The `14day_v1`/`14day` split is at 2025 day 084/085; the `daily`/`14day` split is a variable-set/product-generation difference.
 
