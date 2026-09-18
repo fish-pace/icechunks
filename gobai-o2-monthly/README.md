@@ -120,13 +120,13 @@ and 1.3 s.
 ## How this was built
 
 The viewer is published by `publish_viewer.py` in the
-[GitHub repository](https://github.com/fish-pace/icechunks)
+[GitHub repository](https://github.com/ocean-icechunks/icechunks)
 (`python publish_viewer.py --product gobai-o2 --build ~/gridlook`); it is a plain static
 build of gridlook, and holds no data of its own.
 
 The notebook that built it sits next to this README:
 **`gobai-o2-monthly-icechunk-sc.ipynb`** (also in the GitHub repository
-<https://github.com/fish-pace/icechunks>, directory `gobai-o2-monthly/`). It downloads or
+<https://github.com/ocean-icechunks/icechunks>, directory `gobai-o2-monthly/`). It downloads or
 streams the NCEI file, adds CF and ACDD metadata, rechunks, writes with
 `Dataset.to_zarr`, and validates the published store against the source.
 
@@ -172,7 +172,7 @@ against the live store before it was published.
 ## Reuse and citation
 
 **Code.** The notebook and helpers are released under
-[Apache-2.0](https://github.com/fish-pace/icechunks/blob/main/LICENSE) and are free to use,
+[Apache-2.0](https://github.com/ocean-icechunks/icechunks/blob/main/LICENSE) and are free to use,
 copy, adapt and redistribute, commercially or not — no attribution required.
 
 **Data.** The data is not ours. GOBAI-O2 is released by its authors under

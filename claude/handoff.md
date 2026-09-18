@@ -74,6 +74,10 @@ given `mode="w"`.
   `publish_viewer.py`. That cell also passes **no `ContentType`**, and Source Cooperative
   serves types as uploaded — a full rebuild could downgrade all five files to
   `binary/octet-stream`.
+  **All three README mirrors are now stale**: the repo moved to
+  `ocean-icechunks/icechunks` and the GitHub-side READMEs were updated to match,
+  so the published copies still name `fish-pace`. Harmless while the redirect
+  holds, but it is the first real call on that missing tooling.
 - **Cosmetic:** the production notebook's kernel metadata records Python 3.11.14 (from being
   opened, not run); the test notebooks say 3.12.12, which is the truthful one.
 - `ocean-icechunks/test-repo/{noaa-ohc,oa-indicators}` hold objects from verification runs,

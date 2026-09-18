@@ -206,7 +206,7 @@ variables at read time, as shown above.
 ## How this was built
 
 The notebooks that built these stores live in the GitHub repository
-**<https://github.com/fish-pace/icechunks>** (directory `coastwatch-heat-content/`). Two of
+**<https://github.com/ocean-icechunks/icechunks>** (directory `coastwatch-heat-content/`). Two of
 them sit alongside this README on Source Cooperative:
 
 | Notebook | What it shows | Here? |
@@ -251,7 +251,7 @@ executed against the live stores before it was published.
 ## Reuse and citation
 
 **Code.** The notebooks and helpers are released under
-[Apache-2.0](https://github.com/fish-pace/icechunks/blob/main/LICENSE) and are free to use,
+[Apache-2.0](https://github.com/ocean-icechunks/icechunks/blob/main/LICENSE) and are free to use,
 copy, adapt and redistribute, commercially or not — no attribution required.
 
 **Data.** The data is not ours, and these stores contain none of it — only references to
