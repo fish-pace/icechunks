@@ -152,7 +152,7 @@ observations behind it — useful for deciding where the analysis is actually co
 
 The notebook that built it sits next to this README:
 **`oa-indicators-icechunk-sc.ipynb`** (also in the GitHub repository
-<https://github.com/fish-pace/icechunks>, directory `oa-indicators/`). It opens each of
+<https://github.com/ocean-icechunks/icechunks>, directory `oa-indicators/`). It opens each of
 the twelve source files with [VirtualiZarr](https://virtualizarr.readthedocs.io), merges
 them, rewrites the metadata, writes the store, and then validates the *published* store
 from the anonymous read path — including reading **all 72 arrays back and comparing them
@@ -214,7 +214,7 @@ Every code block on this page was executed against the live store before it was 
 ## Reuse and citation
 
 **Code.** The notebook and helpers are released under
-[Apache-2.0](https://github.com/fish-pace/icechunks/blob/main/LICENSE) and are free to use,
+[Apache-2.0](https://github.com/ocean-icechunks/icechunks/blob/main/LICENSE) and are free to use,
 copy, adapt and redistribute, commercially or not — no attribution required.
 
 **Data.** The data is not ours, and this store contains none of it — only references to

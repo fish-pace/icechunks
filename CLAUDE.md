@@ -22,7 +22,7 @@ Source Cooperative at `ocean-icechunks/noaa-ohc/{na,np,sp}`, each with three gro
 ran successfully on 2026-08-26** — write credentials re-pointed, `ocean-heat-production-sc.ipynb`
 executed end to end, all nine groups committed, and the boundary / variable-set / codec-homogeneity
 assertions passed. Anonymous read at `https://data.source.coop/ocean-icechunks/noaa-ohc/{na,np,sp}`
-is live. The GitHub repo is `https://github.com/fish-pace/icechunks`.
+is live. The GitHub repo is `https://github.com/ocean-icechunks/icechunks`.
 
 Coverage as built (2020-04-30 → 2026-08-26), from the executed notebook's outputs:
 
