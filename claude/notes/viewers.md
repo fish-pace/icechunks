@@ -7,7 +7,7 @@ store. `PRODUCTS` is the only place a viewer is configured.
 | Viewer | Prefix | Renders? |
 |---|---|---|
 | GOBAI-O2 | `fish-pace/gobai-o2/viewer/` | yes — Eli confirmed in a browser |
-| OA indicators | `ocean-icechunks/oa-indicators/viewer/` | yes, transport verified; rendering unconfirmed |
+| OA indicators | `ocean-icechunks/oa-indicators/viewer/` | yes — Eli confirmed in a browser (2026-09-18) |
 | CoastWatch OHC | `ocean-icechunks/noaa-ohc/viewer/` | metadata only — see CORS below |
 
 ## CORS is the thing that decides whether a virtual store draws
@@ -19,7 +19,14 @@ live. That single difference explains every viewer above:
 - `data.source.coop` — `access-control-allow-origin: *`, `Range` honoured, on GET and
   preflight. Never the problem.
 - `www.ncei.noaa.gov` — sends `Access-Control-Allow-Origin: *` on ranged GETs. So the OA
-  viewer draws. A plain `Range: bytes=a-b` is CORS-safelisted, so no preflight is involved.
+  viewer draws — confirmed by Eli in a browser on 2026-09-18, not merely predicted from the
+  headers. A plain `Range: bytes=a-b` is CORS-safelisted, so no preflight is involved; that
+  also means a host can look bare on the preflight and still serve a browser perfectly well,
+  so read the ranged GET as the verdict.
+
+  This is the first virtual store here confirmed to render end to end, across two hosts. It
+  and the CoastWatch row below are now cited in the `virtual-icechunk` skill, which until
+  2026-09-18 told agents that no virtual store had ever rendered in a browser.
 - `coastwatch.noaa.gov` — serves ranged GETs (206, `Accept-Ranges: bytes`) and sends **no**
   `Access-Control-Allow-Origin`, on the GET or the preflight. The OHC viewer therefore loads
   metadata and coordinates, which are real chunks in the repo, and the browser blocks every

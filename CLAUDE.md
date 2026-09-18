@@ -51,7 +51,8 @@ unmodified original, so the 2026-08-06 build outputs are in the history.
 variables (12 indicators × 6 fields) on `(depth 14, lat 76, lon 141)`. Accession 0270962 is a
 finished product, so there is **no update pipeline to write**. Docs mirrored to the `oa-indicators/`
 root; gridlook viewer at `oa-indicators/viewer/` (102 objects), and unlike the CoastWatch viewer it
-works in an ordinary browser — see the CORS note above. Built in PR #24.
+works in an ordinary browser — confirmed by Eli in a browser on 2026-09-18, having been asserted from
+the headers before that. See the CORS note above. Built in PR #24.
 
 **Next tasks (design open):**
 1. **Auto-update pipeline** to append new CoastWatch files as they land. **Undesigned.**

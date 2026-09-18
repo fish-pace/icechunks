@@ -32,6 +32,13 @@ Further detail is in CLAUDE.md under "Key gotchas (OA indicators…)". The ones 
   That, and nothing else, is why this viewer draws and the OHC one does not — see
   [viewers.md](viewers.md).
 
-**Still unconfirmed:** whether the viewer actually *renders*. Transport is verified from here
-(content types, `application/wasm`, CORS on both hosts); there is no browser on the hub, so
-ask Eli. That division is the norm.
+**Confirmed 2026-09-18:** the viewer renders. Transport was verified from here on the build
+date (content types, `application/wasm`, CORS on both hosts) and Eli then opened it in a
+browser. There is no browser on the hub, so that division — transport here, rendering with
+Eli — remains the norm; this is simply a case where both halves are done.
+
+The pair of results was worth more than the store. This viewer drawing while the CoastWatch
+one does not, from the same repository host, is the two-host CORS model confirmed with a
+diagnosable symptom: coordinates are real chunks in the repository and render, science arrays
+are virtual and do not. Both are now cited in the `virtual-icechunk` skill (PR #13 there),
+which had been asserting the opposite.

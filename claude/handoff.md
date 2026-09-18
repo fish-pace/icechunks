@@ -13,7 +13,7 @@ gridlook viewer.
 |---|---|---|---|
 | CoastWatch OHC | `ocean-icechunks/noaa-ohc/{na,np,sp}` | virtual | published, but CORS-blocked at the source |
 | GOBAI-O2 v2.3 monthly | `fish-pace/gobai-o2/monthly` | materialized | renders — confirmed by Eli |
-| OA indicators | `ocean-icechunks/oa-indicators/climatology` | virtual | renders; transport verified, rendering not |
+| OA indicators | `ocean-icechunks/oa-indicators/climatology` | virtual | renders — confirmed by Eli, 2026-09-18 |
 
 - **CoastWatch OHC** — three repos, one per region grid, three groups each (`daily`,
   `14day_v1`, `14day`), covering 2020-04-30 → 2026-08-26. The only **growing** source here,
@@ -64,8 +64,10 @@ given `mode="w"`.
   manual run and drift behind the archive.
 - **`np` and `sp` viewer links share `na`'s `alt`** and may open too tight. Needs two numbers
   from a browser: drag each globe, copy the URL, update `_OHC_BASINS` in `publish_viewer.py`.
-- **Whether the OHC and OA viewers actually render is unconfirmed.** Transport is verified for
-  both. [notes/viewers.md](notes/viewers.md)
+- **The OHC viewer's behaviour under a CORS-disabling extension is unconfirmed.** The OA
+  viewer renders (Eli, 2026-09-18); the OHC one is blocked at `coastwatch.noaa.gov` by design
+  and shows coordinates only, so the open question is narrower than it was — whether it draws
+  for someone overriding CORS locally. [notes/viewers.md](notes/viewers.md)
 - **The docs mirror has no committed tooling.** The only committed path is the last cell of
   `ocean-heat-production-sc.ipynb`, which means a 2.5-hour rebuild first, so 2026-09-17's
   mirrors used a throwaway scratchpad script. Worth a committed `mirror_docs.py` beside
