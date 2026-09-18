@@ -1,6 +1,6 @@
-# icechunks — Icechunk stores of NOAA ocean data
+# icechunks — various
 
-Jupyter notebooks that publish NOAA ocean datasets as
+Jupyter notebooks that publishocean datasets as
 **[Icechunk](https://icechunk.io) repositories** on
 [Source Cooperative](https://source.coop), anonymously readable with `xarray`.
 
