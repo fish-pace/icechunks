@@ -8,7 +8,8 @@ store. `PRODUCTS` is the only place a viewer is configured.
 |---|---|---|
 | GOBAI-O2 | `fish-pace/gobai-o2/viewer/` | yes — Eli confirmed in a browser |
 | OA indicators | `ocean-icechunks/oa-indicators/viewer/` | yes — Eli confirmed in a browser (2026-09-18) |
-| CoastWatch OHC | `ocean-icechunks/noaa-ohc/viewer/` | metadata only — see CORS below |
+| CoastWatch OHC | `ocean-icechunks/noaa-ohc/viewer/` | metadata only in an ordinary browser — see CORS below; draws with a CORS extension (Eli, 2026-09-19) |
+| NOAA OISST | `ocean-icechunks/noaa-oisst/viewer/` | yes, no extension — Eli, 2026-09-19. The store is not ours |
 
 ## CORS is the thing that decides whether a virtual store draws
 
@@ -39,6 +40,25 @@ CoastWatch sends the header (one Apache directive, no rebuild — the manifests 
 The alternative, proxying the source and rebuilding every store against the proxy prefix,
 means re-serving NOAA bytes through infrastructure we would have to run.
 
+- `noaa-cdr-sea-surface-temp-optimum-interpolation-pds.s3.amazonaws.com` (OISST) — an S3
+  bucket with a CORS configuration (`AllowedOrigin *`, readable at `/?cors`), so the OISST
+  viewer draws. The references there are `s3://` URLs; icechunk-js rewrites them to HTTPS.
+
+## Rebuilt 2026-09-19: what went wrong with the first builds
+
+- **Stale clone.** All 2026-09-17 builds came from `~/gridlook` at `2649e66`, 98 commits
+  behind `eeholmes/gridlook` — no log10 transform, no swatch fix, no CORS pop-up. The clone is
+  per machine and that work was done on another hub. `publish_viewer.py` now fetches and
+  refuses a checkout behind its remote. `~/gridlook-xl` is old and irrelevant.
+- **Wrong default.** No `#…` fragment means gridlook's hard-coded demo dataset.
+  `write_default_store` injects a default hash into the published `index.html`.
+- **No catalog for gobai-o2**, so its picker listed 70 demo datasets; with a shared `--dist`
+  it could have been another product's stores. Every product needs a `catalog`.
+- **Caching.** After republishing, the old page can persist in a browser for hours: Source
+  Cooperative does not echo `Cache-Control` for `index.html`, and serves JS with
+  `max-age=14400`. curl the server, then hard-reload. A self-refresh check against
+  `build-info.json` was offered to Eli and not taken up.
+
 ## Link the repository root, not a group
 
 `…/noaa-ohc/na/` is the whole link. gridlook's `splitIcechunkStoreAndGroup` walks a URL back
@@ -49,6 +69,10 @@ thirty-six.
 
 CLAUDE.md used to claim the opposite, that groups meant a link needed more than a store URL.
 That was wrong and is corrected; do not re-derive it.
+
+OISST is the exception: its two groups are different products with different variable names,
+so each group is its own store entry with its own `variables` (`.../oisst.icechunk/daily`,
+`.../oisst.icechunk/monthly`) and gridlook resolves the group from the path.
 
 `variables` in `PRODUCTS` is therefore optional. `gobai-o2` sets it because its README offers
 a link per variable; `noaa-ohc` does not.

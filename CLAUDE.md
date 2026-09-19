@@ -11,9 +11,11 @@ Jupyter notebooks that publish NOAA ocean datasets as Icechunk repositories on S
 
 - `oa-indicators/` — **virtual**: NCEI accession 0270962, the ocean-acidification-indicator climatology on the North American margins. Same pattern as CoastWatch, but the merge problem is the opposite one: the source is **one indicator per NetCDF file**, twelve files on a byte-identical grid, merged into a single flat group of 72 variables. No time dimension — it is a climatology.
 
+- `noaa-oisst/` — **a README and a viewer only; the store is not built here.** NOAA OISST v2.1 at `ocean-icechunks/noaa-oisst/oisst.icechunk` is built and updated about daily by NERACOOS/GMRI (Alex Kerney; <https://github.com/ocean-icechunks/noaa_oisst>, which as of 2026-09-19 holds only its project README). One repository, a virtual `daily` group with `s3://` references into NOAA's CDR bucket (so readers authorize with `s3_anonymous_credentials()`, not `HttpAccess`) and a materialized `monthly` group. Its README here was written by inspecting the published store. Never write under `noaa-oisst/oisst.icechunk/`.
+
 Sibling repos apply the virtual pattern to other datasets — see "Skills and related repos" below.
 
-## Status & roadmap (last updated 2026-09-17)
+## Status & roadmap (last updated 2026-09-19)
 
 **Done:** The CoastWatch OHC archive is built and verified as three separate Icechunk repos on
 Source Cooperative at `ocean-icechunks/noaa-ohc/{na,np,sp}`, each with three groups (`daily`,
@@ -71,8 +73,32 @@ the URL **fragment** (`…/viewer/index.html#icechunk+<store url>::varname=oxy`)
 host never sees, so one build serves any store and the viewer holds no data of its own.
 A sibling script does the same for NODD buckets in `nmfs-opensci/gobai-rfrom-icechunks`.
 
-Both products have a viewer. The CoastWatch one is at `ocean-icechunks/noaa-ohc/viewer/`
-(published 2026-09-17, 102 files, 22.5 MB) and **groups are not a problem** — an earlier
+**All four products have a viewer** (gobai-o2, noaa-ohc, oa-indicators, noaa-oisst), all
+rebuilt on 2026-09-19 from gridlook `b3c42b1` (114 files, 24.8 MB). Four things the script
+now does, each because it went wrong once:
+
+- **It refuses a stale gridlook checkout.** `~/gridlook` is a per-machine clone; on
+  2026-09-17 every viewer was built from one 98 commits behind `eeholmes/gridlook`, silently
+  missing Eli's log10 transform, colormap-swatch fix and CORS pop-up. `build()` fetches and
+  exits if the checkout is behind its remote (`--allow-stale` overrides);
+  `build-info.json` records `gridlook_behind_remote` and the Node version.
+- **It sets a default store.** gridlook hard-codes a demo dataset (an OGS Mediterranean
+  store, `DEFAULT_DATASET` in `HashGlobeView.vue`) for any URL with no `#…` fragment, which is
+  what a bare `viewer/index.html` link is. `write_default_store` injects a one-line inline
+  script into the published `index.html` that sets the hash to the product's first store.
+  Build output only. The lasting fix belongs in the gridlook fork.
+- **Every product needs a `catalog` key.** One `--dist` is reused across products, so a
+  product without one publishes whatever the dist last held — gobai-o2 shipped gridlook's 70
+  demo datasets until 2026-09-19.
+- **A store entry may name its own `variables`**, overriding the product's: noaa-oisst's
+  `daily` group has `sst` where `monthly` has `sst_mean`.
+
+**A republished viewer looks unchanged until a hard reload.** Source Cooperative drops the
+`Cache-Control: no-cache` uploaded with `index.html` and sends only `Last-Modified`, so
+browsers cache the page heuristically, and the JS is served `max-age=14400`. Check the server
+with curl before believing "the update isn't there", then have Eli Ctrl+Shift+R.
+
+The CoastWatch viewer is at `ocean-icechunks/noaa-ohc/viewer/` and **groups are not a problem** — an earlier
 note here claimed they were. gridlook's `splitIcechunkStoreAndGroup` walks a store URL back
 segment by segment until one opens as a repository root, so
 `.../noaa-ohc/na/14day::varname=ohc` resolves to store `.../na` plus group `14day`.
@@ -129,12 +155,29 @@ Node: gridlook's `package.json` asks for Node >= 24.16; the 2026-09-17 build ran
 the image's Node 20.19.6. Build with `vite build --sourcemap false` and a capped heap —
 `npm run build` adds `vue-tsc` and source maps and gets OOM-killed on a small machine.
 
+## Store READMEs
+
+Every store README follows Eli's standard format (reference copy:
+`coastwatch-heat-content/README.md`): title ending "— Icechunk"; a one-line emoji navbar
+(🌐 View data in browser · 💻 Data access (code) · 📦 Data access (provider) · 📄 DOI when
+there is one); an intro with a table of store URLs and the "these stores are virtual"
+paragraph; then `## View it in a browser`, `## How to open it`, `## About the data`,
+dataset-specific sections, `## How this was built` (`### What was changed from the source`,
+`### Provenance`), `## Reuse and citation`, `## Credits`. Directly above the opening code goes
+the **"icechunk 1.x will not work"** note: `icechunk.http_storage` arrived in 2.0 and
+`credentials.HttpAccess` in 2.1 (checked by installing 1.1.21, 2.0.1 and 2.1.0), and every
+2.x needs Python >= 3.12, so an older Python quietly gets 1.1.x and an `AttributeError`.
+Run every code block as written, in a venv holding only the README's own pip line, before
+publishing. READMEs are mirrored to the store roots from merged `main` and checked by
+checksum.
+
 ## Skills and related repos
 
 - **`virtual-icechunk` skill** — <https://github.com/nmfs-opensci/agent-skills> (`skills/virtual-icechunk/`, checked out locally at `~/agent-skills`). The shared, agent-independent guidance for building, validating, documenting and auditing virtual Icechunk stores. Prefer it over re-deriving practice from this repo's notebooks, and feed genuinely new lessons back into it rather than only into this file.
 - **Sibling repos using the same pattern**, each with its own notebooks and destinations — they are *not* in this repo:
   - `~/cefi-icechunks` — NOAA CEFI MOM6 (`https://data.source.coop/eeholmes/cefi/nepacific-icechunk`, groups `daily/regrid/main`, `daily/regrid/aux`; the yearly-file vs. full-period-file split is why it has two groups).
   - `~/pace-icechunks` — PACE ocean colour.
+  - `~/hycom` (`ocean-icechunks/hycom`) — a collection of HYCOM stores, first the GOFS 3.1 reanalysis (306 TB, 63,341 uncompressed NetCDF-3 files). References are *computed* from each file's header rather than parsed, written as a skeleton plus `region=` batches. Its `publish_viewer.py` is a copy of this one, and the viewer fixes above were developed there. Its READMEs tell readers to open with `chunks=None` and select before chunking — right at 2.57 million chunks per variable, **not** advice to copy here.
   - `~/gobai-rfrom-icechunks` — GOBAI-O2 / RFROM, the source of the `requirements.txt` style used here.
   - GlobColour/Copernicus CHL — `https://data.source.coop/fish-pace/globcolour/cmems_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D`.
 
