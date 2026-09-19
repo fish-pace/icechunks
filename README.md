@@ -20,6 +20,14 @@ Three datasets, built two different ways:
   into a single store of 72 variables on one grid. The whole store is 35 kB of metadata
   pointing at 82 MB that stays at NCEI.
 
+A fourth directory documents a store this repository does not build:
+
+- **NOAA OISST v2.1**, in `noaa-oisst/` — a **README and a viewer only**. The store at
+  `ocean-icechunks/noaa-oisst` is built and updated about daily by NERACOOS / GMRI
+  ([ocean-icechunks/noaa_oisst](https://github.com/ocean-icechunks/noaa_oisst)): a virtual
+  `daily` group referencing NOAA's Climate Data Record files on AWS, and a materialized
+  `monthly` group of statistics.
+
 ## The published stores
 
 Public, anonymously readable, no account needed:
