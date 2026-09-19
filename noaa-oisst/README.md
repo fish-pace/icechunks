@@ -161,14 +161,19 @@ land; xarray decodes them to floating point with NaN:
 | `sst` | Daily sea surface temperature | Celsius |
 | `anom` | Daily sea surface temperature anomalies (against a 1971–2000 climatology) | Celsius |
 | `err` | Estimated error standard deviation of analysed_sst | Celsius |
-| `ice` | Sea ice concentration | % |
+| `ice` | Sea ice concentration — **a fraction, 0 to 1**, despite NOAA's `units` attribute | % |
 | `preliminary` (coordinate) | whether that day is still NOAA's preliminary file | boolean |
 
 `monthly` — sixteen variables, `<var>_min`, `<var>_max`, `<var>_mean` and `<var>_std` for
-each of `sst`, `anom`, `err` and `ice`, as `int16` with `scale_factor = 0.01`. **Read the
-names, not the attributes:** each monthly variable still carries its daily source's
+each of `sst`, `anom`, `err` and `ice`, as `int16` with `scale_factor = 0.01` for `sst_*` and
+`anom_*` and `0.001` for `err_*` and `ice_*`. xarray decodes all of them correctly. **Read
+the names, not the attributes:** each monthly variable still carries its daily source's
 `long_name` — `sst_std` says "Daily sea surface temperature" — and the `monthly` group has
-no global attributes. The `daily` group carries NOAA's full CF-1.6 / ACDD-1.3 global
+no global attributes. The `valid_min`/`valid_max` attributes of `err_*` and `ice_*` were not
+rescaled with the data, so a tool that honours them (xarray does not) would mask monthly ice
+concentrations above 0.1; ignore them. Reported to the maintainers as
+[noaa_oisst#2](https://github.com/ocean-icechunks/noaa_oisst/issues/2), along with the slow
+open of `daily`. The `daily` group carries NOAA's full CF-1.6 / ACDD-1.3 global
 attributes, taken from the most recent file.
 
 ## How this was built
