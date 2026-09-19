@@ -219,6 +219,36 @@ PRODUCTS = {
             "title": "NOAA OA indicators - North American margins",
         },
     },
+    # NOAA OISST v2.1. NOT built in this repository: the store is maintained by
+    # NERACOOS/GMRI (github.com/ocean-icechunks/noaa_oisst) and updated about daily.
+    # Only its README and this viewer come from here. One repository, two groups with
+    # different variable names, so each group is a store entry with its own variables
+    # (gridlook resolves `<repo>/<group>` itself). The source bucket sends CORS headers,
+    # so this one draws in an ordinary browser.
+    # `dimIndices_time` cannot say "latest"; 15828 is 2025-01-01 in `daily` (day 0 is
+    # 1981-09-01) and 520 is 2025-01 in `monthly`.
+    "noaa-oisst": {
+        "bucket": "ocean-icechunks",
+        "viewer_prefix": "noaa-oisst/viewer",
+        "stores": {
+            "daily": {
+                "url": f"{PUBLIC}/ocean-icechunks/noaa-oisst/oisst.icechunk/daily",
+                "title": "OISST v2.1 daily (1981-09-01 to present)",
+                "view": "dimIndices_time=15828::dimIndices_zlev=0",
+                "variables": ("sst", "anom", "ice", "err"),
+            },
+            "monthly": {
+                "url": f"{PUBLIC}/ocean-icechunks/noaa-oisst/oisst.icechunk/monthly",
+                "title": "OISST v2.1 monthly statistics",
+                "view": "dimIndices_time=520::dimIndices_zlev=0",
+                "variables": ("sst_mean", "sst_max", "sst_min", "sst_std", "anom_mean"),
+            },
+        },
+        "catalog": {
+            "path": "static/catalog-extended.json",
+            "title": "NOAA OISST v2.1",
+        },
+    },
 }
 DEFAULT_DIST = Path("/tmp/gridlook-dist")
 
@@ -255,6 +285,15 @@ def _stores(product: dict) -> dict[str, dict[str, str]]:
     return out
 
 
+def _variables(product: dict, entry: dict) -> tuple:
+    """A store's own `variables` if it names any, else the product's.
+
+    Stores in one product need not share variable names: noaa-oisst's `daily`
+    group has `sst` where its `monthly` group has `sst_mean`.
+    """
+    return tuple(entry.get("variables") or product.get("variables") or ())
+
+
 def store_fragment(entry: dict, var: str | None = None) -> str:
     """The part after `#`: the store, an optional variable, then the view."""
     name = f"::varname={var}" if var else ""
@@ -265,16 +304,14 @@ def store_fragment(entry: dict, var: str | None = None) -> str:
 def viewer_urls(product: dict, prefix: str) -> dict[str, str]:
     """One link per store, or per store and variable if the product names any."""
     base = f"{PUBLIC}/{product['bucket']}/{prefix}/index.html"
-    variables = product.get("variables")
-    stores = _stores(product)
-    if not variables:
-        return {label: f"{base}#{store_fragment(entry)}"
-                for label, entry in stores.items()}
-    return {
-        f"{label} {var}".strip(): f"{base}#{store_fragment(entry, var)}"
-        for label, entry in stores.items()
-        for var in variables
-    }
+    urls = {}
+    for label, entry in _stores(product).items():
+        variables = _variables(product, entry)
+        if not variables:
+            urls[label] = f"{base}#{store_fragment(entry)}"
+        for var in variables:
+            urls[f"{label} {var}".strip()] = f"{base}#{store_fragment(entry, var)}"
+    return urls
 
 
 def write_catalog(product: dict, dist: Path) -> str | None:
@@ -295,15 +332,13 @@ def write_catalog(product: dict, dist: Path) -> str | None:
     spec = product.get("catalog")
     if not spec:
         return None
-    variables = product.get("variables")
-    var = variables[0] if variables else None
     catalog = {
         "type": "gridlook_catalog",
         "title": spec["title"],
         "datasets": [
             {
                 "title": entry["title"],
-                "url": store_fragment(entry, var),
+                "url": store_fragment(entry, next(iter(_variables(product, entry)), None)),
                 "format": "Icechunk",
                 "access": "direct",
                 "grid": "regular",
@@ -335,9 +370,8 @@ def write_default_store(product: dict, dist: Path) -> str:
     """
     import re
 
-    stores = _stores(product)
-    variables = product.get("variables")
-    fragment = store_fragment(next(iter(stores.values())), variables[0] if variables else None)
+    first = next(iter(_stores(product).values()))
+    fragment = store_fragment(first, next(iter(_variables(product, first)), None))
     index = dist / "index.html"
     html = index.read_text()
     html = re.sub(re.escape(_DEFAULT_BEGIN) + ".*?" + re.escape(_DEFAULT_END) + r"\n?", "", html, flags=re.S)
