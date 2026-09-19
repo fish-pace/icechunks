@@ -30,9 +30,9 @@ plus a README and viewer for a fourth store that someone else builds.
   `noaa-oisst/oisst.icechunk/`. Two problems found while documenting it were reported as
   ocean-icechunks/noaa_oisst#2: `daily/time` is 16,452 one-value chunks (a 7 s open), and the
   `monthly` metadata is copied from `daily` (wrong `long_name`s, `valid_max` not rescaled for
-  `err_*`/`ice_*`, no group attributes). **PR #31 is open, unmerged**: it corrects the README's
-  claim that every monthly variable uses `scale_factor` 0.01. Until it merges and is
-  re-mirrored, the copy on Source Cooperative has that error.
+  `err_*`/`ice_*`, no group attributes). PR #31 (2026-09-19) corrected the README's claim that
+  every monthly variable uses `scale_factor` 0.01 — `err_*` and `ice_*` use 0.001 — and the
+  corrected README was re-mirrored and checked by checksum.
 
 **Before running anything:** the kernel env is Python 3.11 and `icechunk` 2.x requires
 >= 3.12, so it cannot be installed there. A 3.12 venv works — recipe and traps in
@@ -70,7 +70,7 @@ clean venv). Two notebook bugs were found that way — a vacuous validation in t
 notebook, and `ocean-heat-test-sc.ipynb` failing on any re-run until the first write was
 given `mode="w"`.
 
-## Recently shipped (2026-09-19, PRs #28–#30)
+## Recently shipped (2026-09-19, PRs #28–#31)
 
 All viewers rebuilt from a current gridlook after the 2026-09-17 builds turned out to be 98
 commits stale; `publish_viewer.py` gained the stale-checkout guard, the default-store script,
@@ -81,8 +81,9 @@ compared). NOAA OISST got a README and a viewer.
 
 ## Open threads
 
-- **PR #31** (OISST README correction) awaits Eli; re-mirror `noaa-oisst/README.md` after it
-  merges. Watch ocean-icechunks/noaa_oisst#2 for the maintainers' reply.
+- Watch ocean-icechunks/noaa_oisst#2 for the maintainers' reply; if the store is fixed, the
+  OISST README's caveats and its 7 s open time need revisiting and re-mirroring. Eli's
+  cross-repo to-do list from 2026-09-19 is in `~/hycom/claude/notes/todo.md`.
 - **`git pull` fails in this checkout** with "Cannot rebase onto multiple branches"; use
   `git fetch origin && git merge --ff-only origin/main`. Cause not investigated.
 
