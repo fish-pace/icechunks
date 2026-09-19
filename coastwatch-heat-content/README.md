@@ -78,6 +78,13 @@ Requires `icechunk >= 2.1` and `xarray`. The science arrays live at CoastWatch, 
 these stores, so you must authorize the virtual chunk container at open time — this is the
 one non-standard step, and the price of not copying the data.
 
+> **icechunk 1.x will not work.** `icechunk.http_storage` does not exist in icechunk 1.x
+> (it arrived in 2.0), and `icechunk.credentials.HttpAccess` arrived in 2.1. Every icechunk
+> 2.x release needs **Python 3.12 or newer**, so on an older Python `pip install icechunk`
+> quietly installs 1.1.x, and the code below fails with
+> `AttributeError: module 'icechunk' has no attribute 'http_storage'`. Check what you have:
+> `python -c "import icechunk; print(icechunk.__version__)"`.
+
 ```python
 import icechunk
 import xarray as xr
