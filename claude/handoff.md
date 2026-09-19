@@ -3,17 +3,18 @@
 Rolling state for this repo. Orientation only: the open threads below are a record of what
 is unfinished, not a task list.
 
-## Where things stand (2026-09-17)
+## Where things stand (2026-09-19)
 
-Three datasets, all built, published and documented on Source Cooperative. Each has a
-README, its own `requirements.txt`, and its notebooks mirrored to its store root, plus a
-gridlook viewer.
+Three datasets built, published and documented on Source Cooperative — each with a README,
+its own `requirements.txt`, its notebooks mirrored to its store root, and a gridlook viewer —
+plus a README and viewer for a fourth store that someone else builds.
 
 | Dataset | Store | Kind | Viewer |
 |---|---|---|---|
-| CoastWatch OHC | `ocean-icechunks/noaa-ohc/{na,np,sp}` | virtual | published, but CORS-blocked at the source |
+| CoastWatch OHC | `ocean-icechunks/noaa-ohc/{na,np,sp}` | virtual | CORS-blocked at the source; draws with a CORS extension — Eli, 2026-09-19 |
 | GOBAI-O2 v2.3 monthly | `fish-pace/gobai-o2/monthly` | materialized | renders — confirmed by Eli |
 | OA indicators | `ocean-icechunks/oa-indicators/climatology` | virtual | renders — confirmed by Eli, 2026-09-18 |
+| NOAA OISST v2.1 | `ocean-icechunks/noaa-oisst/oisst.icechunk` | **not ours** — built by NERACOOS/GMRI; `daily` virtual, `monthly` materialized | renders in an ordinary browser — Eli, 2026-09-19 |
 
 - **CoastWatch OHC** — three repos, one per region grid, three groups each (`daily`,
   `14day_v1`, `14day`), covering 2020-04-30 → 2026-08-26. The only **growing** source here,
@@ -23,6 +24,15 @@ gridlook viewer.
 - **OA indicators** — NCEI accession 0270962, built in PR #24. Twelve NetCDFs merged into one
   flat group of 72 variables; 84 objects and 35 kB referencing 82 MB left at NCEI. Finished
   accession, static. [notes/oa-indicators.md](notes/oa-indicators.md)
+
+- **NOAA OISST** — README and viewer only (PR #30, 2026-09-19); the store is Alex Kerney's
+  (`ocean-icechunks/noaa_oisst`) and updates about daily. Never write under
+  `noaa-oisst/oisst.icechunk/`. Two problems found while documenting it were reported as
+  ocean-icechunks/noaa_oisst#2: `daily/time` is 16,452 one-value chunks (a 7 s open), and the
+  `monthly` metadata is copied from `daily` (wrong `long_name`s, `valid_max` not rescaled for
+  `err_*`/`ice_*`, no group attributes). **PR #31 is open, unmerged**: it corrects the README's
+  claim that every monthly variable uses `scale_factor` 0.01. Until it merges and is
+  re-mirrored, the copy on Source Cooperative has that error.
 
 **Before running anything:** the kernel env is Python 3.11 and `icechunk` 2.x requires
 >= 3.12, so it cannot be installed there. A 3.12 venv works — recipe and traps in
@@ -46,6 +56,10 @@ gridlook viewer.
 - **Nothing copies array bytes.** Every pipeline but GOBAI-O2 is virtual references into
   files that stay at the source.
 - **Use `git worktree` for anything substantial.** Concurrent sessions share this checkout.
+- **Store READMEs use the standard format, and carry the "icechunk 1.x will not work" note**
+  — both described in CLAUDE.md under "Store READMEs".
+- **Rebuild viewers only from a current gridlook, and expect to hard-reload.** CLAUDE.md,
+  "The browser viewer", and [notes/viewers.md](notes/viewers.md).
 
 ## Recently shipped (2026-09-17, PRs #12–#19, #23–#26)
 
@@ -56,7 +70,21 @@ clean venv). Two notebook bugs were found that way — a vacuous validation in t
 notebook, and `ocean-heat-test-sc.ipynb` failing on any re-run until the first write was
 given `mode="w"`.
 
+## Recently shipped (2026-09-19, PRs #28–#30)
+
+All viewers rebuilt from a current gridlook after the 2026-09-17 builds turned out to be 98
+commits stale; `publish_viewer.py` gained the stale-checkout guard, the default-store script,
+a catalog for gobai-o2 and per-store variables. Every README got the "icechunk 1.x will not
+work" note. The three README mirrors, stale since the move to `ocean-icechunks/icechunks`,
+were refreshed and checked by checksum (READMEs only — the other mirrored files were not
+compared). NOAA OISST got a README and a viewer.
+
 ## Open threads
+
+- **PR #31** (OISST README correction) awaits Eli; re-mirror `noaa-oisst/README.md` after it
+  merges. Watch ocean-icechunks/noaa_oisst#2 for the maintainers' reply.
+- **`git pull` fails in this checkout** with "Cannot rebase onto multiple branches"; use
+  `git fetch origin && git merge --ff-only origin/main`. Cause not investigated.
 
 - **Auto-update pipeline for CoastWatch — undesigned, and the only substantial work left.**
   `write_group` skips groups that already exist, but nothing appends *new time steps* to an
@@ -64,20 +92,15 @@ given `mode="w"`.
   manual run and drift behind the archive.
 - **`np` and `sp` viewer links share `na`'s `alt`** and may open too tight. Needs two numbers
   from a browser: drag each globe, copy the URL, update `_OHC_BASINS` in `publish_viewer.py`.
-- **The OHC viewer's behaviour under a CORS-disabling extension is unconfirmed.** The OA
-  viewer renders (Eli, 2026-09-18); the OHC one is blocked at `coastwatch.noaa.gov` by design
-  and shows coordinates only, so the open question is narrower than it was — whether it draws
-  for someone overriding CORS locally. [notes/viewers.md](notes/viewers.md)
 - **The docs mirror has no committed tooling.** The only committed path is the last cell of
   `ocean-heat-production-sc.ipynb`, which means a 2.5-hour rebuild first, so 2026-09-17's
   mirrors used a throwaway scratchpad script. Worth a committed `mirror_docs.py` beside
   `publish_viewer.py`. That cell also passes **no `ContentType`**, and Source Cooperative
   serves types as uploaded — a full rebuild could downgrade all five files to
   `binary/octet-stream`.
-  **All three README mirrors are now stale**: the repo moved to
-  `ocean-icechunks/icechunks` and the GitHub-side READMEs were updated to match,
-  so the published copies still name `fish-pace`. Harmless while the redirect
-  holds, but it is the first real call on that missing tooling.
+  The README mirrors went stale once already (the move to `ocean-icechunks/icechunks`) and
+  were refreshed by hand on 2026-09-19 with another throwaway script — the second call on
+  that missing tooling.
 - **Cosmetic:** the production notebook's kernel metadata records Python 3.11.14 (from being
   opened, not run); the test notebooks say 3.12.12, which is the truthful one.
 - `ocean-icechunks/test-repo/{noaa-ohc,oa-indicators}` hold objects from verification runs,
